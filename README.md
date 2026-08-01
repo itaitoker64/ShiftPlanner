@@ -87,8 +87,12 @@ release build rather than clashing with it, and it serves Google's test ads rath
 
 ## Building
 
-Requires Android Studio (or just a JDK 17+) and the Android SDK. The Gradle wrapper handles the
-rest.
+Requires Android Studio (or a JDK) and the Android SDK. The Gradle wrapper handles the rest.
+
+**Use JDK 21.** The app compiles to Java 17 bytecode, but the tests do not run on a Java 17 JVM:
+Robolectric refuses to build a sandbox for Android SDK 36 unless the JVM is Java 21 or newer, and
+fails with `Android SDK 36 requires Java 21 (have Java 17)` before any test executes. Recent
+Android Studio bundles a suitable JDK.
 
 ```bash
 ./gradlew :app:testDebugUnitTest

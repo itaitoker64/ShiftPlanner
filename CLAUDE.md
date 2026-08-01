@@ -65,6 +65,9 @@ top of `ScreenRenderTest` for why.
 
 - **Never place this project in a synced folder** (OneDrive, Dropbox, iCloud). Sync clients lock
   files mid-build; Gradle dies with `AccessDeniedException` on `build/intermediates`.
+- **Tests need a Java 21+ JVM.** Robolectric will not build a sandbox for SDK 36 on Java 17 —
+  `Android SDK 36 requires Java 21 (have Java 17)`, thrown before any test runs. The app still
+  targets Java 17 bytecode; this is only the JVM Gradle runs on. CI pins 21 for the same reason.
 - Windows: set `JAVA_HOME` to Android Studio's bundled JDK, e.g.
   `C:\Program Files\Android\Android Studio\jbr`.
 - `local.properties` (SDK path) is gitignored and must be created locally.
