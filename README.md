@@ -7,8 +7,8 @@ You tell it your rotation once ("4 on, 4 off", "Panama 2-2-3", DuPont, or a cycl
 yourself), anchor it to a real date, and it fills in every past and future month. A homescreen
 widget answers the only question that matters day to day: *am I in today, and when am I next in?*
 
-**Status: pre-release.** It compiles, the domain logic is tested, and it has never been run on a
-screen. See [Where it stands](#where-it-stands).
+**Status: pre-release.** Debug and release builds compile, the domain logic is tested, and it has
+never been run on a screen. See [Where it stands](#where-it-stands).
 
 ---
 
@@ -69,6 +69,22 @@ Deliberate constraints, each load-bearing:
 - **No navigation library.** There are two screens. A boolean is enough.
 - **`domain/` has no Android dependencies.** That's why it can be tested on the JVM in seconds.
 
+## Getting the app
+
+There is **no Play Store release yet**, so there is nothing to search for and nothing to download
+from a store. There are two ways to get it onto a phone.
+
+**Without installing anything.** Every push builds a debug APK in CI. Open the
+[Android workflow](../../actions/workflows/android.yml), click the most recent green run, and
+download the `shiftly-debug-apk-…` artifact at the bottom of the page. Unzip it, copy the APK to
+your phone, and open it — Android will ask you to allow installs from that source. Requires Android
+8.0 or newer.
+
+The debug build has applicationId `com.shiftly.planner.debug`, so it installs alongside a future
+release build rather than clashing with it, and it serves Google's test ads rather than live ones.
+
+**By building it yourself.** See below.
+
 ## Building
 
 Requires Android Studio (or just a JDK 17+) and the Android SDK. The Gradle wrapper handles the
@@ -98,21 +114,21 @@ On Windows, use `gradlew.bat`. If Gradle can't find your SDK, create `local.prop
 | Month calendar, day detail, setup flow | Written, **never rendered** |
 | Homescreen widget (Glance) | Written, untested on device |
 | Shift reminders (WorkManager) | Written, untested on device |
-| AdMob banner + UMP consent | Written, **not wired into the UI** |
+| AdMob banner + UMP consent | Wired into the calendar, untested on device |
+| Debug + release builds, CI | Both assemble; every push builds an APK |
 | App icon | Placeholder vector |
 | Play Store listing, privacy policy, signed AAB | Not started |
 
 ### Good first contributions
 
 1. **Run it and report what's broken.** Nothing has been on a screen yet. This is the single most
-   valuable thing anyone can do right now.
-2. **Wire the banner in.** `ads/BannerAd.kt` exists; `CalendarScreen` takes a `bannerAd` slot
-   parameter; `MainActivity` doesn't pass one. Connect them, and gate on consent.
+   valuable thing anyone can do right now, and it no longer needs a toolchain — grab the APK from
+   [Getting the app](#getting-the-app) and open it.
+2. **A real app icon.** The current one is a placeholder vector.
 3. **Editable shift types.** `ShiftType` supports custom names, colours and hours, and the data
    model persists them — but there's no UI to create or edit one.
 4. **More presets.** Add to `domain/Presets.kt`; the tests assert cycle lengths and working-day
    counts, so follow the existing pattern.
-5. **A real app icon.** The current one is a placeholder.
 
 ## Contributing
 
