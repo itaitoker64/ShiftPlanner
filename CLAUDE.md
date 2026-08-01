@@ -47,9 +47,15 @@ ads/        AdMob banner + UMP consent
 ./gradlew :app:assembleDebug
 ```
 
-Unit tests cover the domain only. The UI, widget and reminders have **never been run on a device or
-emulator** — do not describe them as working. Anything outside `domain/` is unverified until someone
-has actually looked at it on a screen.
+Tests run on the JVM in three groups: `domain/` (pure logic), `ui/ScreenRenderTest` (Robolectric
+composes the screens), and `reminder/ReminderWorkerTest` (Robolectric drives the worker).
+
+The screens now compose in tests, which catches crashes on composition. That is **not** the same as
+working: nothing here has been run on a device or emulator, and no one has looked at a single pixel
+of it. The widget in particular has no coverage at all. Do not describe any of it as working.
+
+Robolectric tests run on the stock `Application`, not `ShiftlyApplication` — see the comment at the
+top of `ScreenRenderTest` for why.
 
 ## Environment gotchas
 
