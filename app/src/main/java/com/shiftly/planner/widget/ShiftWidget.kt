@@ -50,9 +50,13 @@ class ShiftWidget : GlanceAppWidget() {
     }
 }
 
+/**
+ * [today] is a parameter rather than a `LocalDate.now()` call inside the body so that the widget's
+ * two states — in today, or counting down to the next shift — can be tested without waiting for the
+ * calendar to cooperate.
+ */
 @Composable
-private fun WidgetContent(schedule: Schedule) {
-    val today = LocalDate.now()
+internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now()) {
     val todayShift = schedule.shiftOn(today)
     val working = todayShift?.isWorking == true
 

@@ -112,11 +112,11 @@ On Windows, use `gradlew.bat`. If Gradle can't find your SDK, create `local.prop
 | Pattern engine, presets, overrides | Done — 21 domain tests |
 | Persistence (DataStore) | Done |
 | Month calendar, day detail, setup flow | Composes in tests, **never seen on a screen** |
-| Homescreen widget (Glance) | Written, untested on device |
+| Homescreen widget (Glance) | Content tested; untested on a real homescreen |
 | Shift reminders (WorkManager) | Logic tested; delivery untested on device |
 | AdMob banner + UMP consent | Wired into the calendar, untested on device |
 | Debug + release builds, CI | Both assemble; every push builds an APK |
-| Test suite | 33 JVM tests: 21 domain, 7 screen, 5 reminder |
+| Test suite | 39 JVM tests: 21 domain, 7 screen, 6 widget, 5 reminder |
 | App icon | Placeholder vector |
 | Play Store listing, privacy policy, signed AAB | Not started |
 

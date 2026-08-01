@@ -47,12 +47,16 @@ ads/        AdMob banner + UMP consent
 ./gradlew :app:assembleDebug
 ```
 
-Tests run on the JVM in three groups: `domain/` (pure logic), `ui/ScreenRenderTest` (Robolectric
-composes the screens), and `reminder/ReminderWorkerTest` (Robolectric drives the worker).
+Tests run on the JVM in four groups: `domain/` (pure logic), `ui/ScreenRenderTest` (Robolectric
+composes the screens), `widget/ShiftWidgetTest` (Glance's own unit-test harness, since Glance
+composes to RemoteViews rather than to a View tree), and `reminder/ReminderWorkerTest`.
 
-The screens now compose in tests, which catches crashes on composition. That is **not** the same as
-working: nothing here has been run on a device or emulator, and no one has looked at a single pixel
-of it. The widget in particular has no coverage at all. Do not describe any of it as working.
+Anything that renders takes the date as a parameter defaulting to `LocalDate.now()` — see
+`WidgetContent`. Calling `now()` inside the body makes the interesting states untestable.
+
+All of this catches crashes and wrong text. It is **not** the same as working: nothing here has been
+run on a device or emulator, and no one has looked at a single pixel of it. Do not describe any of
+it as working.
 
 Robolectric tests run on the stock `Application`, not `ShiftlyApplication` — see the comment at the
 top of `ScreenRenderTest` for why.
