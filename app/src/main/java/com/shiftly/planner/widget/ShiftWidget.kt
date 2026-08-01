@@ -65,13 +65,13 @@ private fun WidgetContent(schedule: Schedule) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(background, background))
+            .background(ColorProvider(background))
             .padding(12.dp)
             .clickable(actionStartActivity<MainActivity>()),
         verticalAlignment = Alignment.Vertical.CenterVertically,
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
     ) {
-        val white = ColorProvider(Color.White, Color.White)
+        val white = ColorProvider(Color.White)
 
         Text(
             text = "Today",
