@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose supplies the real theming; this only needs to exist for the manifest and to
+         avoid an ugly flash before the first frame. -->
+    <style name="Theme.Shiftly" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Adaptive-icon foreground. Everything must sit inside the centre 72x72 safe zone, so the
+         mark is drawn between 18 and 90. A four-cell grid: three "on" days and one "off",
+         which is what the app is about. -->
+    <group android:translateX="18" android:translateY="18">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M6,6h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M44,6h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M6,44h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4z" />
+        <!-- The "off" day: outline only. -->
+        <path
+            android:fillColor="#66FFFFFF"
+            android:pathData="M44,44h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4zM48,52v20h20v-20z" />
+    </group>
+</vector>

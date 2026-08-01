@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shiftly</string>
+    <string name="widget_label">Shiftly — today\'s shift</string>
+    <string name="widget_description">Shows the shift you are on today and when you are next in.</string>
+    <string name="reminder_channel_name">Shift reminders</string>
+    <string name="reminder_channel_description">Notifies you the evening before a working day.</string>
+    <string name="reminder_title">You are in tomorrow</string>
+</resources>
