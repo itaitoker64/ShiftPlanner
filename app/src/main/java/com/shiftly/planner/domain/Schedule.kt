@@ -32,6 +32,21 @@ data class Schedule(
 
     fun isOverridden(date: LocalDate): Boolean = overrides.containsKey(date.toEpochDay())
 
+    /**
+     * Adds any built-in shift type the stored schedule predates.
+     *
+     * [shiftTypes] is persisted, so a schedule saved before a built-in existed keeps the older,
+     * shorter list. A preset referring to the newer type would then resolve to no shift at all and
+     * the calendar would come up blank. Applied on load; user-created and user-edited types are
+     * untouched because only ids missing entirely are added.
+     */
+    fun withBuiltinTypes(): Schedule {
+        val missing = ShiftType.defaults.filterNot { builtin ->
+            shiftTypes.any { it.id == builtin.id }
+        }
+        return if (missing.isEmpty()) this else copy(shiftTypes = shiftTypes + missing)
+    }
+
     fun withOverride(date: LocalDate, shiftTypeId: String): Schedule =
         copy(overrides = overrides + (date.toEpochDay() to shiftTypeId))
 

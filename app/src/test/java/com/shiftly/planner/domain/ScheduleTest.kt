@@ -86,6 +86,49 @@ class ShiftPatternTest {
     fun `dupont works fourteen of every twenty-eight days`() {
         assertEquals(14, Presets.byKey("dupont")!!.workingDaysPerCycle)
     }
+
+    @Test
+    fun `preset keys are unique`() {
+        val keys = Presets.all.map { it.key }
+        assertEquals(keys.size, keys.toSet().size)
+    }
+
+    @Test
+    fun `every preset references a shift type that exists`() {
+        val known = ShiftType.defaults.map { it.id }.toSet()
+        Presets.all.forEach { preset ->
+            preset.cycle.forEach { id ->
+                assertTrue("${preset.name} references unknown type $id", id in known)
+            }
+        }
+    }
+
+    @Test
+    fun `the fire service rotations run on whole-day tours`() {
+        assertEquals(3, Presets.byKey("24_48")!!.cycleLength)
+        assertEquals(1, Presets.byKey("24_48")!!.workingDaysPerCycle)
+
+        assertEquals(6, Presets.byKey("48_96")!!.cycleLength)
+        assertEquals(2, Presets.byKey("48_96")!!.workingDaysPerCycle)
+
+        // Kelly is three tours on alternate days, then four off.
+        assertEquals(9, Presets.byKey("kelly")!!.cycleLength)
+        assertEquals(3, Presets.byKey("kelly")!!.workingDaysPerCycle)
+    }
+
+    @Test
+    fun `a 24 on 48 off rotation puts a tour every third day`() {
+        val schedule = Schedule(
+            pattern = ShiftPattern(
+                "t", "24 on, 48 off", Presets.byKey("24_48")!!.cycle, anchor.toEpochDay(),
+            ),
+        )
+
+        assertEquals(ShiftType.FULL_DAY, schedule.shiftOn(anchor))
+        assertEquals(ShiftType.OFF, schedule.shiftOn(anchor.plusDays(1)))
+        assertEquals(ShiftType.OFF, schedule.shiftOn(anchor.plusDays(2)))
+        assertEquals(ShiftType.FULL_DAY, schedule.shiftOn(anchor.plusDays(3)))
+    }
 }
 
 class ScheduleTest {
@@ -187,6 +230,40 @@ class ScheduleTest {
         val schedule = scheduleWith(listOf(ID_OFF))
         assertNull(schedule.nextWorkingDay(anchor))
     }
+
+    @Test
+    fun `a schedule stored before a built-in existed gains it on load`() {
+        // What an older install holds: the four types that existed at the time.
+        val stored = Schedule(shiftTypes = listOf(ShiftType.OFF, ShiftType.DAY, ShiftType.NIGHT))
+
+        val loaded = stored.withBuiltinTypes()
+
+        assertEquals(ShiftType.defaults.map { it.id }.toSet(), loaded.shiftTypes.map { it.id }.toSet())
+        // Without this, a rotation using the newer type resolves to no shift and the month is blank.
+        assertEquals(
+            ShiftType.FULL_DAY,
+            loaded.copy(
+                pattern = ShiftPattern("t", "24s", listOf(ShiftType.ID_FULL_DAY), anchor.toEpochDay()),
+            ).shiftOn(anchor),
+        )
+    }
+
+    @Test
+    fun `adding built-ins leaves an edited type alone`() {
+        val renamed = ShiftType.DAY.copy(name = "Earlies", colorArgb = 0xFF123456)
+        val stored = Schedule(shiftTypes = listOf(ShiftType.OFF, renamed))
+
+        val loaded = stored.withBuiltinTypes()
+
+        assertEquals(renamed, loaded.typeOrNull(ShiftType.ID_DAY))
+        assertEquals(ShiftType.defaults.size, loaded.shiftTypes.size)
+    }
+
+    @Test
+    fun `adding built-ins is a no-op when they are all present`() {
+        val schedule = Schedule()
+        assertEquals(schedule, schedule.withBuiltinTypes())
+    }
 }
 
 class ShiftTypeTest {
@@ -205,5 +282,10 @@ class ShiftTypeTest {
     @Test
     fun `non-working types have no duration`() {
         assertNull(ShiftType.OFF.durationMinutes)
+    }
+
+    @Test
+    fun `a tour that ends when it started is a full day, not zero`() {
+        assertEquals(24 * 60, ShiftType.FULL_DAY.durationMinutes)
     }
 }

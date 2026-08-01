@@ -27,7 +27,7 @@ The whole app rests on one idea:
 
 > **Every rotation is a fixed-length cycle of shifts, anchored to a real calendar date.**
 
-That single abstraction covers all ten presets and anything a user builds by hand, which is why
+That single abstraction covers all thirteen presets and anything a user builds by hand, which is why
 there's one `ShiftPattern` type rather than a class per rotation.
 
 ```kotlin
@@ -53,7 +53,7 @@ domain/     Pure Kotlin. No Android imports. Fully unit-tested.
   ShiftType     A kind of shift: name, colour, hours, working or not.
   ShiftPattern  The repeating cycle + anchor date. The engine.
   Schedule      Shift types + pattern + overrides. Resolves any date.
-  Presets       Ten real-world rotations.
+  Presets       Thirteen real-world rotations, including 24-hour fire service tours.
 
 data/       ScheduleRepository — DataStore, one JSON blob. No backend, no network.
 ui/         Compose. ScheduleViewModel exposes StateFlow; screens are stateless.
@@ -109,14 +109,14 @@ On Windows, use `gradlew.bat`. If Gradle can't find your SDK, create `local.prop
 
 | Area | State |
 |---|---|
-| Pattern engine, presets, overrides | Done — 21 domain tests |
+| Pattern engine, presets, overrides | Done — 29 domain tests, 13 presets |
 | Persistence (DataStore) | Done |
 | Month calendar, day detail, setup flow | Composes in tests, **never seen on a screen** |
 | Homescreen widget (Glance) | Content tested; untested on a real homescreen |
 | Shift reminders (WorkManager) | Logic tested; delivery untested on device |
 | AdMob banner + UMP consent | Wired into the calendar, untested on device |
 | Debug + release builds, CI | Both assemble; every push builds an APK |
-| Test suite | 39 JVM tests: 21 domain, 7 screen, 6 widget, 5 reminder |
+| Test suite | 47 JVM tests: 29 domain, 7 screen, 6 widget, 5 reminder |
 | App icon | Placeholder vector |
 | Play Store listing, privacy policy, signed AAB | Not started |
 

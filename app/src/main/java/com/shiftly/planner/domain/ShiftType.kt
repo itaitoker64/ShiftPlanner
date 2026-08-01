@@ -40,6 +40,7 @@ data class ShiftType(
         const val ID_DAY = "builtin_day"
         const val ID_NIGHT = "builtin_night"
         const val ID_EVENING = "builtin_evening"
+        const val ID_FULL_DAY = "builtin_full_day"
 
         val OFF = ShiftType(
             id = ID_OFF,
@@ -76,7 +77,22 @@ data class ShiftType(
             endMinute = 23 * 60,
         )
 
+        /**
+         * A full 24-hour tour, as worked by fire and ambulance crews.
+         *
+         * Starts and ends at 08:00, which [durationMinutes] reads as a whole day rather than as
+         * zero — a shift that ends when it started has run right round the clock.
+         */
+        val FULL_DAY = ShiftType(
+            id = ID_FULL_DAY,
+            name = "24 hours",
+            abbreviation = "24",
+            colorArgb = 0xFF00897B,
+            startMinute = 8 * 60,
+            endMinute = 8 * 60,
+        )
+
         /** Seeded into a new install; the user can edit or add to these. */
-        val defaults: List<ShiftType> = listOf(OFF, DAY, NIGHT, EVENING)
+        val defaults: List<ShiftType> = listOf(OFF, DAY, NIGHT, EVENING, FULL_DAY)
     }
 }
