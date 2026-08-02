@@ -99,7 +99,11 @@ class ScreenRenderTest {
             ShiftlyTheme { SetupScreen(viewModel = viewModel(), onDone = {}) }
         }
 
+        // Scrolled to first, the way a person reaches it: the picker sits below the rotation's
+        // nudge card and the links off this screen, so on a short screen even the first preset
+        // starts below the fold.
         val first = Presets.all.first()
+        compose.onNode(verticalList).performScrollToNode(hasText(first.name))
         compose.onNodeWithText(first.name).performClick()
         compose.waitForIdle()
 
