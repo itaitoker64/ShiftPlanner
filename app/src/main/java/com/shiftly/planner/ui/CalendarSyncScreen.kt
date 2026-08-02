@@ -76,7 +76,8 @@ fun CalendarSyncScreen(
     val context = LocalContext.current
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     val status by viewModel.calendarStatus.collectAsStateWithLifecycle()
-    val syncedCalendarId by viewModel.syncedCalendarId.collectAsStateWithLifecycle()
+    val syncedCalendarId by viewModel.syncedCalendarId
+        .collectAsStateWithLifecycle(initialValue = null)
 
     var granted by remember {
         mutableStateOf(

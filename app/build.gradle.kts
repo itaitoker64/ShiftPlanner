@@ -90,11 +90,12 @@ android {
 // A Compose test that never reaches idle hangs rather than fails, and CI will happily sit on it
 // until the runner's own six-hour limit. Failing after ten minutes turns that into a build
 // failure, and logging each test as it starts means the last line names whichever one stuck.
+// Four minutes: the whole suite runs in well under one.
 //
 // Deliberately outside the android block: in there `java` resolves to Gradle's java extension
 // rather than the package, so java.time.Duration will not compile.
 tasks.withType<Test>().configureEach {
-    timeout.set(Duration.ofMinutes(10))
+    timeout.set(Duration.ofMinutes(4))
     testLogging {
         events("started", "passed", "failed", "skipped")
     }

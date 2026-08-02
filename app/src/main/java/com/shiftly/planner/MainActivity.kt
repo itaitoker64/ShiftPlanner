@@ -69,7 +69,8 @@ private enum class Destination { Calendar, Setup, Guide, Onboarding, ShiftTimes,
 @Composable
 private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
-    val onboardingComplete by viewModel.onboardingComplete.collectAsStateWithLifecycle()
+    val onboardingComplete by viewModel.onboardingComplete
+        .collectAsStateWithLifecycle(initialValue = true)
     var editingPattern by remember { mutableStateOf(false) }
     var showingGuide by remember { mutableStateOf(false) }
     var showingShiftTimes by remember { mutableStateOf(false) }

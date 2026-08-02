@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -44,23 +45,20 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
      * False until the first-run walkthrough has been finished or skipped.
      *
      * Kept out of [Schedule] deliberately: it says something about this install, not about the
-     * rota, and the schedule blob is what gets backed up and restored.
+     * rota, and a corrupt schedule blob must not also lose the fact it has been seen.
+     *
+     * Exposed as a plain Flow rather than shared into a StateFlow. Each stateIn holds a collector
+     * open on viewModelScope — which is Dispatchers.Main — for five seconds past its last
+     * subscriber, and pending main-thread work is exactly what a Compose test waits on.
      */
-    val onboardingComplete: StateFlow<Boolean> = repository.onboardingComplete.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = true,
-    )
+    val onboardingComplete: Flow<Boolean> = repository.onboardingComplete
 
     fun markOnboardingComplete() {
         viewModelScope.launch { repository.setOnboardingComplete() }
     }
 
-    val syncedCalendarId: StateFlow<Long?> = repository.syncedCalendarId.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = null,
-    )
+    /** Plain Flow for the same reason as [onboardingComplete]. */
+    val syncedCalendarId: Flow<Long?> = repository.syncedCalendarId
 
     private val _calendarStatus = MutableStateFlow<CalendarStatus>(CalendarStatus.Idle)
     val calendarStatus: StateFlow<CalendarStatus> = _calendarStatus.asStateFlow()
