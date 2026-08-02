@@ -20,8 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -110,7 +110,7 @@ fun CalendarScreen(
                     }
                     TextButton(onClick = viewModel::showToday) { Text("Today") }
                     IconButton(onClick = onShowGuide) {
-                        Icon(Icons.Outlined.HelpOutline, "How this app works")
+                        Icon(Icons.AutoMirrored.Outlined.HelpOutline, "How this app works")
                     }
                     IconButton(onClick = onEditPattern) {
                         Icon(Icons.Default.Edit, "Edit rotation")

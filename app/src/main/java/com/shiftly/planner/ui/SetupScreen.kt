@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -88,7 +88,7 @@ fun SetupScreen(
                 },
                 actions = {
                     IconButton(onClick = onShowGuide) {
-                        Icon(Icons.Outlined.HelpOutline, "How this app works")
+                        Icon(Icons.AutoMirrored.Outlined.HelpOutline, "How this app works")
                     }
                 },
             )
