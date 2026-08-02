@@ -5,6 +5,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Set by CI so that every published build outnumbers the last one. Android will not install an
+// APK whose versionCode is not greater than the installed one, so a fixed value means the phone
+// silently refuses every update after the first.
+val buildNumber = providers.environmentVariable("SHIFTLY_VERSION_CODE").orNull?.toInt() ?: 1
+
+// A stable key for the builds published to the phone. Absent locally, in which case Gradle falls
+// back to the throwaway debug key it generates per machine — fine for running from Studio, but no
+// use for updating an existing install, since a different key reads as a different app.
+val distributionKeystore = providers.environmentVariable("SHIFTLY_KEYSTORE_FILE").orNull
+
 android {
     namespace = "com.shiftly.planner"
     compileSdk = 36
@@ -14,16 +24,30 @@ android {
         minSdk = 26
         // Google Play requires new submissions to target API 36 from 31 August 2026.
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = "1.0.$buildNumber"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (distributionKeystore != null) {
+            create("distribution") {
+                storeFile = file(distributionKeystore)
+                storePassword = providers.environmentVariable("SHIFTLY_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("SHIFTLY_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("SHIFTLY_KEY_PASSWORD").orNull
+            }
+        }
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            if (distributionKeystore != null) {
+                signingConfig = signingConfigs.getByName("distribution")
+            }
         }
         release {
             isMinifyEnabled = true

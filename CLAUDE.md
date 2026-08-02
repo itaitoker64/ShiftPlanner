@@ -31,7 +31,11 @@ ads/        AdMob banner + UMP consent
 - **Never hardcode a live ad unit id.** `AdIds` switches on `BuildConfig.DEBUG` and must keep
   resolving to Google's test units in debug builds.
 - **Never commit keystores.** Losing or leaking the upload key means the app can never be updated
-  again.
+  again. The distribution key CI signs published builds with lives in repository secrets, decoded
+  to a runner temp file and deleted afterwards — never in the tree.
+- **`versionCode` must increase on every published build.** It comes from `SHIFTLY_VERSION_CODE`
+  (CI passes the run number). Android refuses to install an APK whose `versionCode` is not greater
+  than the installed one, so a fixed value silently breaks updates on every phone that has it.
 - **`targetSdk` must stay at 36 or higher.** Google Play rejects new submissions below API 36 from
   31 August 2026.
 - **Mutations go through `ScheduleViewModel.mutate`**, which persists *and* refreshes the widget.
