@@ -1,5 +1,6 @@
 package com.shiftly.planner.ui
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -25,10 +26,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shiftly.planner.R
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.displayAbbreviation
+import com.shiftly.planner.text.displayName
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -36,13 +42,19 @@ import java.time.format.DateTimeFormatter
 private val DATE_TITLE: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM")
 private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-private fun ShiftType.timeRangeText(): String? {
+// Takes a Context rather than being @Composable: it returns early for non-working shifts, and an
+// early return out of a composable is more trouble than formatting a string is worth.
+private fun ShiftType.timeRangeText(context: Context): String? {
     val start = startMinute ?: return null
     val end = endMinute ?: return null
     val from = LocalTime.of(start / 60, start % 60).format(TIME)
     val to = LocalTime.of(end / 60, end % 60).format(TIME)
-    val hours = durationMinutes?.let { " · ${it / 60}h" } ?: ""
-    return "$from – $to$hours"
+    val hours = durationMinutes?.div(60)
+    return if (hours == null) {
+        context.getString(R.string.time_range, from, to)
+    } else {
+        context.getString(R.string.time_range_with_hours, from, to, hours)
+    }
 }
 
 /**
@@ -61,6 +73,7 @@ fun DayDetailSheet(
     onResetToPattern: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
+    val context = LocalContext.current
     val current = schedule.shiftOn(date)
     val patternShift = schedule.pattern?.shiftTypeIdOn(date)?.let { schedule.typeOrNull(it) }
 
@@ -79,17 +92,21 @@ fun DayDetailSheet(
 
             Spacer(Modifier.size(4.dp))
 
+            val name = current?.displayName(context) ?: stringResource(R.string.day_no_shift)
+            val times = current?.timeRangeText(context)
             Text(
-                text = buildString {
-                    append(current?.name ?: "No shift")
-                    current?.timeRangeText()?.let { append(" · $it") }
-                },
+                text = times?.let { stringResource(R.string.day_shift_with_time, name, it) } ?: name,
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             schedule.pattern?.let { pattern ->
                 Text(
-                    text = "Day ${pattern.cycleDayOn(date) + 1} of ${pattern.cycleLength} · ${pattern.name}",
+                    text = stringResource(
+                        R.string.day_cycle_position,
+                        pattern.cycleDayOn(date) + 1,
+                        pattern.cycleLength,
+                        pattern.name,
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -97,9 +114,12 @@ fun DayDetailSheet(
 
             Spacer(Modifier.size(20.dp))
 
-            Text("Change this day", style = MaterialTheme.typography.labelLarge)
             Text(
-                text = "Only this day changes — your rotation stays as it is.",
+                text = stringResource(R.string.day_change_title),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Text(
+                text = stringResource(R.string.day_change_help),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -128,11 +148,16 @@ fun DayDetailSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = patternShift?.let { "Rotation says: ${it.name}" }
-                            ?: "Edited away from the rotation",
+                        text = patternShift
+                            ?.let {
+                                stringResource(R.string.day_rotation_says, it.displayName(context))
+                            }
+                            ?: stringResource(R.string.day_edited),
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    TextButton(onClick = onResetToPattern) { Text("Reset") }
+                    TextButton(onClick = onResetToPattern) {
+                        Text(stringResource(R.string.action_reset))
+                    }
                 }
             }
         }
@@ -154,14 +179,14 @@ private fun ShiftChoice(type: ShiftType, isSelected: Boolean, onClick: () -> Uni
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = type.abbreviation.ifEmpty { "–" },
+                text = type.displayAbbreviation().ifEmpty { "–" },
                 color = textOn(fill),
                 fontWeight = FontWeight.Bold,
             )
         }
         Spacer(Modifier.size(4.dp))
         Text(
-            text = type.name,
+            text = type.displayName(),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
         )

@@ -51,12 +51,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shiftly.planner.R
 import com.shiftly.planner.domain.Presets
 import com.shiftly.planner.domain.ShiftPreset
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.displayAbbreviation
+import com.shiftly.planner.text.displayDescription
+import com.shiftly.planner.text.displayName
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -78,17 +84,20 @@ fun SetupScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Your rotation") },
+                title = { Text(stringResource(R.string.setup_title)) },
                 navigationIcon = {
                     if (pattern != null) {
                         IconButton(onClick = onDone) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back))
                         }
                     }
                 },
                 actions = {
                     IconButton(onClick = onShowGuide) {
-                        Icon(Icons.AutoMirrored.Outlined.HelpOutline, "How this app works")
+                        Icon(
+                            Icons.AutoMirrored.Outlined.HelpOutline,
+                            stringResource(R.string.cd_guide),
+                        )
                     }
                 },
             )
@@ -111,12 +120,12 @@ fun SetupScreen(
                 FilterChip(
                     selected = !useCustom,
                     onClick = { useCustom = false },
-                    label = { Text("Common rotations") },
+                    label = { Text(stringResource(R.string.tab_presets)) },
                 )
                 FilterChip(
                     selected = useCustom,
                     onClick = { useCustom = true },
-                    label = { Text("Build my own") },
+                    label = { Text(stringResource(R.string.tab_custom)) },
                 )
             }
 
@@ -133,8 +142,8 @@ fun SetupScreen(
             } else {
                 PresetPicker(
                     shiftTypes = schedule.shiftTypes,
-                    onSave = { preset, start ->
-                        viewModel.applyPreset(preset, start)
+                    onSave = { preset, start, name ->
+                        viewModel.applyPreset(preset, start, name)
                         onDone()
                     },
                 )
@@ -153,20 +162,18 @@ fun SetupScreen(
 private fun FirstRunIntro(onShowGuide: () -> Unit) {
     Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
         Text(
-            text = "Pick the rotation you work, and Shiftly fills in your calendar for every " +
-                "month ahead.",
+            text = stringResource(R.string.intro_headline),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(Modifier.size(6.dp))
         Text(
-            text = "Choose one below, or build your own if it isn't listed. You can change it " +
-                "later.",
+            text = stringResource(R.string.intro_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.size(4.dp))
         TextButton(onClick = onShowGuide, contentPadding = PaddingValues(0.dp)) {
-            Text("How this app works")
+            Text(stringResource(R.string.guide_link))
         }
     }
 }
@@ -190,24 +197,23 @@ private fun NudgeCard(patternName: String, onNudge: (Long) -> Unit) {
     ) {
         Column(Modifier.padding(14.dp)) {
             Text(
-                text = "You're on $patternName",
+                text = stringResource(R.string.nudge_title, patternName),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "Right shifts, wrong days? Move the whole rotation without rebuilding it. " +
-                    "Days you changed by hand stay where they are.",
+                text = stringResource(R.string.nudge_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.size(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { onNudge(-1) }, modifier = Modifier.weight(1f)) {
-                    Text("A day earlier")
+                    Text(stringResource(R.string.nudge_earlier))
                 }
                 OutlinedButton(onClick = { onNudge(1) }, modifier = Modifier.weight(1f)) {
-                    Text("A day later")
+                    Text(stringResource(R.string.nudge_later))
                 }
             }
         }
@@ -217,7 +223,7 @@ private fun NudgeCard(patternName: String, onNudge: (Long) -> Unit) {
 @Composable
 private fun PresetPicker(
     shiftTypes: List<ShiftType>,
-    onSave: (ShiftPreset, LocalDate) -> Unit,
+    onSave: (ShiftPreset, LocalDate, String) -> Unit,
 ) {
     var selected by remember { mutableStateOf<ShiftPreset?>(null) }
     var startDate by remember { mutableStateOf(LocalDate.now()) }
@@ -238,18 +244,21 @@ private fun PresetPicker(
 
         selected?.let { preset ->
             item {
+                // Stored as well as shown: the pattern keeps a plain name, so what gets saved is
+                // whatever this reader was shown when they chose it.
+                val presetName = preset.displayName()
+
                 Spacer(Modifier.size(4.dp))
                 StartDateSection(
                     startDate = startDate,
                     onDateChange = { startDate = it },
-                    helper = "Pick the first day of your next \"${preset.name}\" cycle — the first " +
-                        "day back on after a block off.",
+                    helper = stringResource(R.string.preset_start_helper, presetName),
                 )
                 Spacer(Modifier.size(12.dp))
                 Button(
-                    onClick = { onSave(preset, startDate) },
+                    onClick = { onSave(preset, startDate, presetName) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Use this rotation") }
+                ) { Text(stringResource(R.string.action_use_rotation)) }
             }
         }
     }
@@ -274,13 +283,21 @@ private fun PresetCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text(preset.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Text(preset.description, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = preset.displayName(),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(preset.displayDescription(), style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.size(10.dp))
             CyclePreview(preset.cycle, shiftTypes)
             Spacer(Modifier.size(6.dp))
             Text(
-                text = "${preset.workingDaysPerCycle} shifts every ${preset.cycleLength} days",
+                text = stringResource(
+                    R.string.preset_shifts_per_cycle,
+                    preset.workingDaysPerCycle,
+                    preset.cycleLength,
+                ),
                 style = MaterialTheme.typography.labelSmall,
             )
         }
@@ -290,6 +307,7 @@ private fun PresetCard(
 /** A horizontal strip of coloured squares — the fastest way to recognise your own rotation. */
 @Composable
 private fun CyclePreview(cycle: List<String>, shiftTypes: List<ShiftType>) {
+    val context = LocalContext.current
     val byId = remember(shiftTypes) { shiftTypes.associateBy { it.id } }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         items(cycle.size) { index ->
@@ -304,7 +322,7 @@ private fun CyclePreview(cycle: List<String>, shiftTypes: List<ShiftType>) {
             ) {
                 if (type?.isWorking == true) {
                     Text(
-                        text = type.abbreviation,
+                        text = type.displayAbbreviation(context),
                         style = MaterialTheme.typography.labelSmall,
                         color = textOn(fill),
                     )
@@ -323,6 +341,7 @@ private fun CustomCycleBuilder(
     var startDate by remember { mutableStateOf(LocalDate.now()) }
     val cycle = remember { mutableListOf<String>().toMutableStateList() }
     val byId = remember(shiftTypes) { shiftTypes.associateBy { it.id } }
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -333,7 +352,7 @@ private fun CustomCycleBuilder(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name (optional)") },
+                label = { Text(stringResource(R.string.custom_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -341,8 +360,7 @@ private fun CustomCycleBuilder(
 
         item {
             Text(
-                text = "Tap a shift for each day of your cycle, in order. Add days until the " +
-                    "pattern repeats.",
+                text = stringResource(R.string.custom_help),
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(Modifier.size(8.dp))
@@ -363,7 +381,7 @@ private fun CustomCycleBuilder(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = type.abbreviation.ifEmpty { "–" },
+                            text = type.displayAbbreviation().ifEmpty { "–" },
                             color = textOn(fill),
                             fontWeight = FontWeight.Bold,
                         )
@@ -375,9 +393,9 @@ private fun CustomCycleBuilder(
         item {
             Text(
                 text = if (cycle.isEmpty()) {
-                    "Your cycle is empty"
+                    stringResource(R.string.custom_cycle_empty)
                 } else {
-                    "Your cycle · ${cycle.size} days"
+                    stringResource(R.string.custom_cycle_length, cycle.size)
                 },
                 style = MaterialTheme.typography.labelLarge,
             )
@@ -399,7 +417,7 @@ private fun CustomCycleBuilder(
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                text = type?.abbreviation.orEmpty(),
+                                text = type?.displayAbbreviation(context).orEmpty(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = textOn(fill),
                             )
@@ -407,14 +425,17 @@ private fun CustomCycleBuilder(
                     }
                 }
                 Spacer(Modifier.size(4.dp))
-                Text("Tap a day to remove it", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = stringResource(R.string.custom_tap_to_remove),
+                    style = MaterialTheme.typography.labelSmall,
+                )
             }
 
             item {
                 StartDateSection(
                     startDate = startDate,
                     onDateChange = { startDate = it },
-                    helper = "Pick the date you'll be on day 1 of this cycle.",
+                    helper = stringResource(R.string.custom_start_helper),
                 )
             }
 
@@ -422,7 +443,7 @@ private fun CustomCycleBuilder(
                 Button(
                     onClick = { onSave(name, cycle.toList(), startDate) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Save rotation") }
+                ) { Text(stringResource(R.string.action_save_rotation)) }
             }
         }
     }
@@ -441,7 +462,7 @@ private fun StartDateSection(
         Text(helper, style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.size(8.dp))
         OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Cycle starts: ${startDate.format(START_DATE)}")
+            Text(stringResource(R.string.cycle_starts, startDate.format(START_DATE)))
         }
     }
 
@@ -460,10 +481,12 @@ private fun StartDateSection(
                         )
                     }
                     showPicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showPicker = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
         ) {
             DatePicker(state = state)

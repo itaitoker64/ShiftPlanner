@@ -1,9 +1,168 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Shiftly</string>
+    <string name="app_name" translatable="false">Shiftly</string>
+
+    <!-- Widget and notifications -->
     <string name="widget_label">Shiftly — today\'s shift</string>
     <string name="widget_description">Shows the shift you are on today and when you are next in.</string>
     <string name="reminder_channel_name">Shift reminders</string>
     <string name="reminder_channel_description">Notifies you the evening before a working day.</string>
     <string name="reminder_title">You are in tomorrow</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_no_rotation">No rotation</string>
+    <string name="widget_back_tomorrow">Back in tomorrow</string>
+    <!-- 1: date, e.g. "Mon 4 May". 2: how many days away. -->
+    <string name="widget_back_on">Back in %1$s · %2$dd</string>
+    <string name="widget_nothing_scheduled">Nothing scheduled</string>
+
+    <!-- Built-in shift types. The abbreviation is drawn inside a calendar square, so it has to
+         stay to one or two characters. -->
+    <string name="shift_off">Off</string>
+    <string name="shift_off_short" translatable="false"></string>
+    <string name="shift_day">Day</string>
+    <string name="shift_day_short">D</string>
+    <string name="shift_night">Night</string>
+    <string name="shift_night_short">N</string>
+    <string name="shift_evening">Evening</string>
+    <string name="shift_evening_short">E</string>
+    <string name="shift_full_day">24 hours</string>
+    <string name="shift_full_day_short" translatable="false">24</string>
+
+    <!-- Calendar -->
+    <string name="cd_previous_month">Previous month</string>
+    <string name="cd_next_month">Next month</string>
+    <string name="action_today">Today</string>
+    <string name="cd_guide">How this app works</string>
+    <string name="cd_edit_rotation">Edit rotation</string>
+    <string name="summary_shifts">shifts</string>
+    <string name="summary_days_off">days off</string>
+    <string name="summary_hours">hours</string>
+    <string name="hours_only">%1$dh</string>
+    <string name="hours_and_minutes">%1$dh %2$dm</string>
+    <!-- 1: rotation name. 2: how many days the cycle runs for. -->
+    <string name="rotation_summary">%1$s · %2$d-day cycle</string>
+    <string name="rotation_none">No rotation set up yet</string>
+    <string name="action_set_up">Set up</string>
+    <string name="action_change">Change</string>
+
+    <!-- Rotation setup -->
+    <string name="setup_title">Your rotation</string>
+    <string name="cd_back">Back</string>
+    <string name="tab_presets">Common rotations</string>
+    <string name="tab_custom">Build my own</string>
+    <string name="intro_headline">Pick the rotation you work, and Shiftly fills in your calendar for every month ahead.</string>
+    <string name="intro_body">Choose one below, or build your own if it isn\'t listed. You can change it later.</string>
+    <string name="guide_link">How this app works</string>
+    <!-- 1: rotation name. -->
+    <string name="nudge_title">You\'re on %1$s</string>
+    <string name="nudge_body">Right shifts, wrong days? Move the whole rotation without rebuilding it. Days you changed by hand stay where they are.</string>
+    <string name="nudge_earlier">A day earlier</string>
+    <string name="nudge_later">A day later</string>
+    <!-- 1: working days in one cycle. 2: length of the cycle in days. -->
+    <string name="preset_shifts_per_cycle">%1$d shifts every %2$d days</string>
+    <!-- 1: the rotation\'s name. -->
+    <string name="preset_start_helper">Pick the first day of your next \"%1$s\" cycle — the first day back on after a block off.</string>
+    <string name="action_use_rotation">Use this rotation</string>
+    <string name="custom_name_label">Name (optional)</string>
+    <string name="custom_help">Tap a shift for each day of your cycle, in order. Add days until the pattern repeats.</string>
+    <string name="custom_cycle_empty">Your cycle is empty</string>
+    <!-- 1: how many days the user has added so far. -->
+    <string name="custom_cycle_length">Your cycle · %1$d days</string>
+    <string name="custom_tap_to_remove">Tap a day to remove it</string>
+    <string name="custom_start_helper">Pick the date you\'ll be on day 1 of this cycle.</string>
+    <string name="action_save_rotation">Save rotation</string>
+    <!-- 1: the chosen date, already formatted. -->
+    <string name="cycle_starts">Cycle starts: %1$s</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="default_rotation_name">My rotation</string>
+
+    <!-- A single day -->
+    <string name="day_no_shift">No shift</string>
+    <!-- 1: shift name. 2: its hours. -->
+    <string name="day_shift_with_time">%1$s · %2$s</string>
+    <!-- 1: position in the cycle. 2: cycle length. 3: rotation name. -->
+    <string name="day_cycle_position">Day %1$d of %2$d · %3$s</string>
+    <string name="day_change_title">Change this day</string>
+    <string name="day_change_help">Only this day changes — your rotation stays as it is.</string>
+    <!-- 1: the shift the rotation would give this day. -->
+    <string name="day_rotation_says">Rotation says: %1$s</string>
+    <string name="day_edited">Edited away from the rotation</string>
+    <string name="action_reset">Reset</string>
+    <!-- 1: start time. 2: end time. -->
+    <string name="time_range">%1$s – %2$s</string>
+    <!-- 1: start time. 2: end time. 3: length in whole hours. -->
+    <string name="time_range_with_hours">%1$s – %2$s · %3$dh</string>
+
+    <!-- Guide -->
+    <string name="guide_title">How Shiftly works</string>
+    <string name="guide_intro">Tell Shiftly your rotation once. It fills in every month, forwards and back, for as long as you work it.</string>
+
+    <string name="guide_repeats_title">Your rotation repeats — that\'s the whole idea</string>
+    <string name="guide_repeats_1">Most shift work runs on a cycle: four on and four off, two-two-three, a week of days then a week of nights. Whatever yours is, it repeats.</string>
+    <string name="guide_repeats_2">So Shiftly only needs two things from you: what one full cycle looks like, and which real date you are on day 1 of it. From those it works out every other day by itself. There is nothing to fill in each week.</string>
+
+    <string name="guide_reading_title">Reading the calendar</string>
+    <string name="guide_reading_1">Every day is a coloured square. The colour and the letter tell you which shift it is.</string>
+    <string name="guide_legend_working">A working day</string>
+    <string name="guide_legend_working_detail">Filled in the colour of that shift, with its letter underneath.</string>
+    <string name="guide_legend_off">A day off</string>
+    <string name="guide_legend_off_detail">Pale and unlettered, so a run of days off is obvious at a glance.</string>
+    <string name="guide_legend_today">Today</string>
+    <string name="guide_legend_today_detail">Ringed, with the date in bold. The Today button in the top bar brings you back to it from any month.</string>
+    <string name="guide_legend_edited">A day you changed yourself</string>
+    <string name="guide_legend_edited_detail">The red dot means this day no longer follows the rotation because you set it by hand.</string>
+
+    <string name="guide_totals_title">The three numbers at the top</string>
+    <string name="guide_totals_1">Shifts is how many working days fall in the month you are looking at. Days off is the rest of the month. Hours adds up the length of every shift in it — useful for checking a payslip.</string>
+    <string name="guide_totals_2">They follow whichever month is on screen, so scroll forward to see what next month holds.</string>
+
+    <string name="guide_one_day_title">Changing one single day</string>
+    <string name="guide_one_day_1">Tap any day and pick a different shift. Swapped a shift with someone, took a day\'s leave, got called in — this is for that.</string>
+    <string name="guide_one_day_2">Only that one day changes. Your rotation is left alone, so the rest of the year does not move. The day gets a red dot to show it was you, not the rotation. Tap it again and press Reset to put it back.</string>
+
+    <string name="guide_rotation_title">Changing your whole rotation</string>
+    <string name="guide_rotation_1">The bar at the bottom of the calendar shows the rotation you are on. Tap it, or the pencil in the top bar, to pick a different one or build your own.</string>
+    <string name="guide_rotation_2">Changing your rotation clears the single days you had changed by hand. Those were corrections to the old rotation and would be wrong against the new one.</string>
+
+    <string name="guide_offset_title">Everything is off by a day or two</string>
+    <string name="guide_offset_1">This is the usual thing to go wrong, and it is not worth rebuilding your rotation over. It means the start date you gave is out — the shape of your cycle is right, it is just sitting on the wrong dates.</string>
+    <string name="guide_offset_2">Open your rotation from the bar at the bottom of the calendar. At the top you will find buttons to move the whole rotation a day earlier or a day later. Nudge it until the calendar matches the shifts you actually worked this week. Days you changed by hand stay put.</string>
+
+    <string name="guide_widget_title">On your homescreen</string>
+    <string name="guide_widget_1">Shiftly comes with a widget showing the shift you are on today and when you are next in. Long-press an empty part of your homescreen, choose Widgets, and find Shiftly in the list.</string>
+
+    <string name="guide_reminder_title">The evening before</string>
+    <string name="guide_reminder_1">If you allow notifications, Shiftly reminds you the evening before any working day. Nothing on days off.</string>
+
+    <string name="guide_privacy_title">Your schedule stays on your phone</string>
+    <string name="guide_privacy_1">There is no account and no sign-in, and your rotation is not sent anywhere. It is stored on this phone only, which also means uninstalling the app deletes it.</string>
+
+    <!-- Ready-made rotations. Each pair matches a key in domain/Presets.kt. -->
+    <string name="preset_4on4off_days">4 on, 4 off</string>
+    <string name="preset_4on4off_days_desc">Four 12-hour days, then four days off. 8-day cycle.</string>
+    <string name="preset_4on4off_dn">4 on, 4 off — days &amp; nights</string>
+    <string name="preset_4on4off_dn_desc">Four days on, four off, four nights on, four off. 16-day cycle.</string>
+    <string name="preset_panama_days">Panama (2-2-3)</string>
+    <string name="preset_panama_days_desc">2 on, 2 off, 3 on, 2 off, 2 on, 3 off. 14-day cycle.</string>
+    <string name="preset_panama_dn">Panama (2-2-3) — days &amp; nights</string>
+    <string name="preset_panama_dn_desc">A full 2-2-3 rotation on days, then the same on nights. 28-day cycle.</string>
+    <string name="preset_dupont">DuPont</string>
+    <string name="preset_dupont_desc">The classic 28-day 12-hour rotation, ending in a full week off.</string>
+    <string name="preset_3on3off">3 on, 3 off</string>
+    <string name="preset_3on3off_desc">Three 12-hour days on, three off. 6-day cycle.</string>
+    <string name="preset_7on7off">7 on, 7 off</string>
+    <string name="preset_7on7off_desc">A full week on, a full week off. 14-day cycle.</string>
+    <string name="preset_5on2off">5 on, 2 off</string>
+    <string name="preset_5on2off_desc">A standard working week. Anchor it to a Monday. 7-day cycle.</string>
+    <string name="preset_6on2off">6 on, 2 off</string>
+    <string name="preset_6on2off_desc">Six on, two off — drifts through the week. 8-day cycle.</string>
+    <string name="preset_week_days_nights">Week of days, week of nights</string>
+    <string name="preset_week_days_nights_desc">Five days on, two off, five nights on, two off. 14-day cycle.</string>
+    <string name="preset_24_48">24 on, 48 off</string>
+    <string name="preset_24_48_desc">A 24-hour tour, then two days off. 3-day cycle.</string>
+    <string name="preset_48_96">48 on, 96 off</string>
+    <string name="preset_48_96_desc">Two 24-hour tours back to back, then four days off. 6-day cycle.</string>
+    <string name="preset_kelly">Kelly</string>
+    <string name="preset_kelly_desc">Three 24-hour tours on alternate days, then four days off. 9-day cycle.</string>
 </resources>

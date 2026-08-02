@@ -40,14 +40,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shiftly.planner.R
 import com.shiftly.planner.domain.DayShift
 import com.shiftly.planner.domain.MonthSummary
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.displayAbbreviation
+import com.shiftly.planner.text.displayName
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -101,19 +106,30 @@ fun CalendarScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.showMonth(month.minusMonths(1)) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous month")
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            stringResource(R.string.cd_previous_month),
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.showMonth(month.plusMonths(1)) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next month")
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            stringResource(R.string.cd_next_month),
+                        )
                     }
-                    TextButton(onClick = viewModel::showToday) { Text("Today") }
+                    TextButton(onClick = viewModel::showToday) {
+                        Text(stringResource(R.string.action_today))
+                    }
                     IconButton(onClick = onShowGuide) {
-                        Icon(Icons.AutoMirrored.Outlined.HelpOutline, "How this app works")
+                        Icon(
+                            Icons.AutoMirrored.Outlined.HelpOutline,
+                            stringResource(R.string.cd_guide),
+                        )
                     }
                     IconButton(onClick = onEditPattern) {
-                        Icon(Icons.Default.Edit, "Edit rotation")
+                        Icon(Icons.Default.Edit, stringResource(R.string.cd_edit_rotation))
                     }
                 },
             )
@@ -165,13 +181,35 @@ fun CalendarScreen(
 
 @Composable
 private fun MonthSummaryBar(summary: MonthSummary) {
+    // Formatted here rather than through MonthSummary.totalHoursText: the domain has no way to
+    // reach a string resource, so "8h 30m" would stay English on a Hebrew phone.
+    val hours = summary.totalMinutes / 60
+    val minutes = summary.totalMinutes % 60
+    val hoursText = if (minutes == 0) {
+        stringResource(R.string.hours_only, hours)
+    } else {
+        stringResource(R.string.hours_and_minutes, hours, minutes)
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SummaryStat("${summary.workingDays}", "shifts", Modifier.weight(1f))
-        SummaryStat("${summary.offDays}", "days off", Modifier.weight(1f))
-        SummaryStat(summary.totalHoursText, "hours", Modifier.weight(1f))
+        SummaryStat(
+            value = "${summary.workingDays}",
+            label = stringResource(R.string.summary_shifts),
+            modifier = Modifier.weight(1f),
+        )
+        SummaryStat(
+            value = "${summary.offDays}",
+            label = stringResource(R.string.summary_days_off),
+            modifier = Modifier.weight(1f),
+        )
+        SummaryStat(
+            value = hoursText,
+            label = stringResource(R.string.summary_hours),
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -318,9 +356,12 @@ internal fun DayCell(
                 fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Medium,
                 color = content,
             )
-            if (shift != null && shift.abbreviation.isNotEmpty()) {
+            // The non-composable overload: a safe call on a @Composable one would be a conditional
+            // composable invocation, which is more machinery than reading a string deserves.
+            val abbreviation = shift?.displayAbbreviation(LocalContext.current).orEmpty()
+            if (abbreviation.isNotEmpty()) {
                 Text(
-                    text = shift.abbreviation,
+                    text = abbreviation,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = content.copy(alpha = 0.85f),
@@ -345,6 +386,7 @@ internal fun DayCell(
 /** Which colour means which shift, for the shifts actually on screen this month. */
 @Composable
 private fun Legend(types: List<ShiftType>) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -360,7 +402,7 @@ private fun Legend(types: List<ShiftType>) {
                 )
                 Spacer(Modifier.size(5.dp))
                 Text(
-                    text = type.name,
+                    text = type.displayName(context),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -387,13 +429,16 @@ private fun PatternFooter(schedule: Schedule, onEditPattern: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = pattern?.let { "${it.name} · ${it.cycleLength}-day cycle" }
-                    ?: "No rotation set up yet",
+                text = pattern
+                    ?.let { stringResource(R.string.rotation_summary, it.name, it.cycleLength) }
+                    ?: stringResource(R.string.rotation_none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = if (pattern == null) "Set up" else "Change",
+                text = stringResource(
+                    if (pattern == null) R.string.action_set_up else R.string.action_change
+                ),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,

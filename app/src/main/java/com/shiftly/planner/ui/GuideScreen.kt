@@ -26,8 +26,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shiftly.planner.R
 import com.shiftly.planner.domain.DayShift
 import com.shiftly.planner.domain.ShiftType
 import java.time.LocalDate
@@ -46,10 +48,10 @@ fun GuideScreen(onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("How Shiftly works") },
+                title = { Text(stringResource(R.string.guide_title)) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back))
                     }
                 },
             )
@@ -64,145 +66,117 @@ fun GuideScreen(onDone: () -> Unit) {
         ) {
             item {
                 Text(
-                    text = "Tell Shiftly your rotation once. It fills in every month, " +
-                        "forwards and back, for as long as you work it.",
+                    text = stringResource(R.string.guide_intro),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             item {
-                GuideSection("Your rotation repeats — that's the whole idea") {
+                GuideSection(stringResource(R.string.guide_repeats_title)) {
                     Paragraph(
-                        "Most shift work runs on a cycle: four on and four off, two-two-three, a " +
-                            "week of days then a week of nights. Whatever yours is, it repeats."
+                        stringResource(R.string.guide_repeats_1)
                     )
                     Paragraph(
-                        "So Shiftly only needs two things from you: what one full cycle looks " +
-                            "like, and which real date you are on day 1 of it. From those it works " +
-                            "out every other day by itself. There is nothing to fill in each week."
+                        stringResource(R.string.guide_repeats_2)
                     )
                 }
             }
 
             item {
-                GuideSection("Reading the calendar") {
+                GuideSection(stringResource(R.string.guide_reading_title)) {
                     Paragraph(
-                        "Every day is a coloured square. The colour and the letter tell you which " +
-                            "shift it is."
+                        stringResource(R.string.guide_reading_1)
                     )
                     Spacer(Modifier.size(12.dp))
                     LegendRow(
                         day = DayShift(EXAMPLE_DATE, ShiftType.DAY),
-                        title = "A working day",
-                        detail = "Filled in the colour of that shift, with its letter underneath. " +
-                            "D for day, N for night, E for evening, 24 for a full tour.",
+                        title = stringResource(R.string.guide_legend_working),
+                        detail = stringResource(R.string.guide_legend_working_detail),
                     )
                     LegendRow(
                         day = DayShift(EXAMPLE_DATE, ShiftType.OFF),
-                        title = "A day off",
-                        detail = "Pale and unlettered, so a run of days off is obvious at a glance.",
+                        title = stringResource(R.string.guide_legend_off),
+                        detail = stringResource(R.string.guide_legend_off_detail),
                     )
                     LegendRow(
                         day = DayShift(EXAMPLE_DATE, ShiftType.NIGHT),
-                        title = "Today",
+                        title = stringResource(R.string.guide_legend_today),
                         isToday = true,
-                        detail = "Ringed, with the date in bold. The Today button in the top bar " +
-                            "brings you back to it from any month.",
+                        detail = stringResource(R.string.guide_legend_today_detail),
                     )
                     LegendRow(
                         day = DayShift(EXAMPLE_DATE, ShiftType.EVENING, isOverridden = true),
-                        title = "A day you changed yourself",
-                        detail = "The red dot means this day no longer follows the rotation " +
-                            "because you set it by hand.",
+                        title = stringResource(R.string.guide_legend_edited),
+                        detail = stringResource(R.string.guide_legend_edited_detail),
                     )
                 }
             }
 
             item {
-                GuideSection("The three numbers at the top") {
+                GuideSection(stringResource(R.string.guide_totals_title)) {
                     Paragraph(
-                        "Shifts is how many working days fall in the month you are looking at. " +
-                            "Days off is the rest of the month. Hours adds up the length of every " +
-                            "shift in it — useful for checking a payslip."
+                        stringResource(R.string.guide_totals_1)
                     )
                     Paragraph(
-                        "They follow whichever month is on screen, so scroll forward to see what " +
-                            "next month holds."
+                        stringResource(R.string.guide_totals_2)
                     )
                 }
             }
 
             item {
-                GuideSection("Changing one single day") {
+                GuideSection(stringResource(R.string.guide_one_day_title)) {
                     Paragraph(
-                        "Tap any day and pick a different shift. Swapped a shift with someone, " +
-                            "took a day's leave, got called in — this is for that."
+                        stringResource(R.string.guide_one_day_1)
                     )
                     Paragraph(
-                        "Only that one day changes. Your rotation is left alone, so the rest of " +
-                            "the year does not move. The day gets a red dot to show it was you, " +
-                            "not the rotation. Tap it again and press Reset to put it back."
+                        stringResource(R.string.guide_one_day_2)
                     )
                 }
             }
 
             item {
-                GuideSection("Changing your whole rotation") {
+                GuideSection(stringResource(R.string.guide_rotation_title)) {
                     Paragraph(
-                        "The bar at the bottom of the calendar shows the rotation you are on. Tap " +
-                            "it, or the pencil in the top bar, to pick a different one or build " +
-                            "your own."
+                        stringResource(R.string.guide_rotation_1)
                     )
                     Paragraph(
-                        "Changing your rotation clears the single days you had changed by hand. " +
-                            "Those were corrections to the old rotation and would be wrong " +
-                            "against the new one."
+                        stringResource(R.string.guide_rotation_2)
                     )
                 }
             }
 
             item {
-                GuideSection("Everything is off by a day or two") {
+                GuideSection(stringResource(R.string.guide_offset_title)) {
                     Paragraph(
-                        "This is the usual thing to go wrong, and it is not worth rebuilding your " +
-                            "rotation over. It means the start date you gave is out — the shape " +
-                            "of your cycle is right, it is just sitting on the wrong dates."
+                        stringResource(R.string.guide_offset_1)
                     )
                     Paragraph(
-                        "Open your rotation from the bar at the bottom of the calendar. At the " +
-                            "top you will find buttons to move the whole rotation a day earlier " +
-                            "or a day later. Nudge it until the calendar matches the shifts you " +
-                            "actually worked this week. Days you changed by hand stay put."
+                        stringResource(R.string.guide_offset_2)
                     )
                 }
             }
 
             item {
-                GuideSection("On your homescreen") {
+                GuideSection(stringResource(R.string.guide_widget_title)) {
                     Paragraph(
-                        "Shiftly comes with a widget showing the shift you are on today and when " +
-                            "you are next in. Long-press an empty part of your homescreen, choose " +
-                            "Widgets, and find Shiftly in the list."
+                        stringResource(R.string.guide_widget_1)
                     )
                 }
             }
 
             item {
-                GuideSection("The evening before") {
+                GuideSection(stringResource(R.string.guide_reminder_title)) {
                     Paragraph(
-                        "If you allow notifications, Shiftly reminds you the evening before any " +
-                            "working day. Nothing on days off."
+                        stringResource(R.string.guide_reminder_1)
                     )
                 }
             }
 
             item {
-                GuideSection("Your schedule stays on your phone") {
+                GuideSection(stringResource(R.string.guide_privacy_title)) {
                     Paragraph(
-                        "There is no account and no sign-in, and your rotation is not sent " +
-                            "anywhere. It is stored on this phone only, which also means " +
-                            "uninstalling the app deletes it."
+                        stringResource(R.string.guide_privacy_1)
                     )
                 }
             }

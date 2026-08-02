@@ -16,6 +16,7 @@ import com.shiftly.planner.MainActivity
 import com.shiftly.planner.R
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.displayName
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
@@ -80,7 +81,7 @@ class ReminderWorker(
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.reminder_title))
-            .setContentText("${shift.name}$hours")
+            .setContentText("${shift.displayName(context)}$hours")
             .setContentIntent(openApp)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

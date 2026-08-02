@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
+import androidx.glance.LocalContext
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.action.actionStartActivity
@@ -24,8 +25,10 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.shiftly.planner.MainActivity
+import com.shiftly.planner.R
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.Schedule
+import com.shiftly.planner.text.displayName
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -57,6 +60,7 @@ class ShiftWidget : GlanceAppWidget() {
  */
 @Composable
 internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now()) {
+    val context = LocalContext.current
     val todayShift = schedule.shiftOn(today)
     val working = todayShift?.isWorking == true
 
@@ -78,12 +82,13 @@ internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now(
         val white = ColorProvider(Color.White)
 
         Text(
-            text = "Today",
+            text = context.getString(R.string.widget_today),
             style = TextStyle(color = white, fontSize = 12.sp),
         )
 
         Text(
-            text = todayShift?.name ?: "No rotation",
+            text = todayShift?.displayName(context)
+                ?: context.getString(R.string.widget_no_rotation),
             style = TextStyle(color = white, fontSize = 20.sp, fontWeight = FontWeight.Bold),
         )
 
@@ -106,11 +111,16 @@ internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now(
             Text(
                 text = next?.let {
                     val days = it.date.toEpochDay() - today.toEpochDay()
-                    when (days) {
-                        1L -> "Back in tomorrow"
-                        else -> "Back in ${it.date.format(NEXT_SHIFT_DATE)} · ${days}d"
+                    if (days == 1L) {
+                        context.getString(R.string.widget_back_tomorrow)
+                    } else {
+                        context.getString(
+                            R.string.widget_back_on,
+                            it.date.format(NEXT_SHIFT_DATE),
+                            days.toInt(),
+                        )
                     }
-                } ?: "Nothing scheduled",
+                } ?: context.getString(R.string.widget_nothing_scheduled),
                 style = TextStyle(color = white, fontSize = 13.sp),
             )
         }

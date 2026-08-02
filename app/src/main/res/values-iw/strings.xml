@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hebrew. The folder is values-iw rather than values-he on purpose: Android resource qualifiers
+  use the superseded ISO 639-1 codes, and values-he is not matched on any platform version.
+-->
+<resources>
+
+    <!-- Widget and notifications -->
+    <string name="widget_label">Shiftly — המשמרת של היום</string>
+    <string name="widget_description">מראה את המשמרת שלכם היום ומתי המשמרת הבאה.</string>
+    <string name="reminder_channel_name">תזכורות משמרת</string>
+    <string name="reminder_channel_description">מודיע לכם בערב שלפני יום עבודה.</string>
+    <string name="reminder_title">יש לכם משמרת מחר</string>
+    <string name="widget_today">היום</string>
+    <string name="widget_no_rotation">אין סבב</string>
+    <string name="widget_back_tomorrow">חוזרים מחר</string>
+    <string name="widget_back_on">חוזרים ב־%1$s · בעוד %2$d ימים</string>
+    <string name="widget_nothing_scheduled">אין משמרות</string>
+
+    <!-- Built-in shift types -->
+    <string name="shift_off">חופש</string>
+    <string name="shift_day">יום</string>
+    <string name="shift_day_short">י</string>
+    <string name="shift_night">לילה</string>
+    <string name="shift_night_short">ל</string>
+    <string name="shift_evening">ערב</string>
+    <string name="shift_evening_short">ע</string>
+    <string name="shift_full_day">24 שעות</string>
+
+    <!-- Calendar -->
+    <string name="cd_previous_month">החודש הקודם</string>
+    <string name="cd_next_month">החודש הבא</string>
+    <string name="action_today">היום</string>
+    <string name="cd_guide">איך האפליקציה עובדת</string>
+    <string name="cd_edit_rotation">עריכת הסבב</string>
+    <string name="summary_shifts">משמרות</string>
+    <string name="summary_days_off">ימי חופש</string>
+    <string name="summary_hours">שעות</string>
+    <string name="hours_only">%1$d ש׳</string>
+    <string name="hours_and_minutes">%1$d ש׳ %2$d ד׳</string>
+    <string name="rotation_summary">%1$s · מחזור של %2$d ימים</string>
+    <string name="rotation_none">עדיין לא הוגדר סבב</string>
+    <string name="action_set_up">הגדרה</string>
+    <string name="action_change">שינוי</string>
+
+    <!-- Rotation setup -->
+    <string name="setup_title">הסבב שלכם</string>
+    <string name="cd_back">חזרה</string>
+    <string name="tab_presets">סבבים נפוצים</string>
+    <string name="tab_custom">בנייה עצמית</string>
+    <string name="intro_headline">בחרו את הסבב שאתם עובדים, ו־Shiftly תמלא את היומן לכל חודש קדימה.</string>
+    <string name="intro_body">בחרו אחד מהרשימה, או בנו סבב משלכם אם הוא לא מופיע. אפשר לשנות בכל שלב.</string>
+    <string name="guide_link">איך האפליקציה עובדת</string>
+    <string name="nudge_title">אתם על %1$s</string>
+    <string name="nudge_body">המשמרות נכונות אבל התאריכים לא? אפשר להזיז את כל הסבב בלי לבנות אותו מחדש. ימים ששיניתם ידנית יישארו במקומם.</string>
+    <string name="nudge_earlier">יום אחורה</string>
+    <string name="nudge_later">יום קדימה</string>
+    <string name="preset_shifts_per_cycle">%1$d משמרות בכל %2$d ימים</string>
+    <string name="preset_start_helper">בחרו את היום הראשון של מחזור ה־\"%1$s\" הבא שלכם — היום הראשון שחוזרים לעבודה אחרי רצף חופש.</string>
+    <string name="action_use_rotation">שימוש בסבב הזה</string>
+    <string name="custom_name_label">שם (לא חובה)</string>
+    <string name="custom_help">הקישו על משמרת לכל יום במחזור, לפי הסדר. הוסיפו ימים עד שהתבנית חוזרת על עצמה.</string>
+    <string name="custom_cycle_empty">המחזור שלכם ריק</string>
+    <string name="custom_cycle_length">המחזור שלכם · %1$d ימים</string>
+    <string name="custom_tap_to_remove">הקישו על יום כדי להסיר אותו</string>
+    <string name="custom_start_helper">בחרו את התאריך שבו אתם ביום 1 של המחזור הזה.</string>
+    <string name="action_save_rotation">שמירת הסבב</string>
+    <string name="cycle_starts">המחזור מתחיל: %1$s</string>
+    <string name="action_ok">אישור</string>
+    <string name="action_cancel">ביטול</string>
+    <string name="default_rotation_name">הסבב שלי</string>
+
+    <!-- A single day -->
+    <string name="day_no_shift">אין משמרת</string>
+    <string name="day_shift_with_time">%1$s · %2$s</string>
+    <string name="day_cycle_position">יום %1$d מתוך %2$d · %3$s</string>
+    <string name="day_change_title">שינוי היום הזה</string>
+    <string name="day_change_help">רק היום הזה משתנה — הסבב שלכם נשאר כמו שהוא.</string>
+    <string name="day_rotation_says">לפי הסבב: %1$s</string>
+    <string name="day_edited">שונה ידנית מהסבב</string>
+    <string name="action_reset">איפוס</string>
+    <string name="time_range">%1$s – %2$s</string>
+    <string name="time_range_with_hours">%1$s – %2$s · %3$d ש׳</string>
+
+    <!-- Guide -->
+    <string name="guide_title">איך Shiftly עובדת</string>
+    <string name="guide_intro">מגדירים את הסבב פעם אחת. Shiftly ממלאת כל חודש, קדימה ואחורה, כל עוד אתם עובדים אותו.</string>
+
+    <string name="guide_repeats_title">הסבב שלכם חוזר על עצמו — זה כל הרעיון</string>
+    <string name="guide_repeats_1">רוב העבודה במשמרות בנויה על מחזור: ארבעה ימי עבודה וארבעה חופש, שניים־שניים־שלושה, שבוע של ימים ואז שבוע של לילות. מה שלא יהיה הסבב שלכם — הוא חוזר על עצמו.</string>
+    <string name="guide_repeats_2">לכן Shiftly צריכה מכם רק שני דברים: איך נראה מחזור אחד שלם, ובאיזה תאריך אמיתי אתם ביום 1 שלו. מזה היא מחשבת לבד את כל שאר הימים. אין מה למלא כל שבוע.</string>
+
+    <string name="guide_reading_title">איך קוראים את היומן</string>
+    <string name="guide_reading_1">כל יום הוא ריבוע צבעוני. הצבע והאות אומרים לכם איזו משמרת זו.</string>
+    <string name="guide_legend_working">יום עבודה</string>
+    <string name="guide_legend_working_detail">צבוע בצבע של אותה משמרת, עם האות שלה מתחת.</string>
+    <string name="guide_legend_off">יום חופש</string>
+    <string name="guide_legend_off_detail">בהיר ובלי אות, כך שרצף ימי חופש בולט במבט אחד.</string>
+    <string name="guide_legend_today">היום</string>
+    <string name="guide_legend_today_detail">מוקף במסגרת, עם התאריך מודגש. הכפתור \"היום\" בסרגל העליון מחזיר אתכם אליו מכל חודש.</string>
+    <string name="guide_legend_edited">יום ששיניתם בעצמכם</string>
+    <string name="guide_legend_edited_detail">הנקודה האדומה אומרת שהיום הזה כבר לא הולך לפי הסבב, כי קבעתם אותו ידנית.</string>
+
+    <string name="guide_totals_title">שלושת המספרים למעלה</string>
+    <string name="guide_totals_1">\"משמרות\" הוא כמה ימי עבודה נופלים בחודש שאתם מסתכלים עליו. \"ימי חופש\" הוא כל השאר. \"שעות\" מסכם את אורך כל המשמרות בחודש — נוח לבדיקת תלוש.</string>
+    <string name="guide_totals_2">הם מתעדכנים לפי החודש שמוצג, אז גללו קדימה כדי לראות מה מחכה בחודש הבא.</string>
+
+    <string name="guide_one_day_title">שינוי של יום בודד</string>
+    <string name="guide_one_day_1">הקישו על יום כלשהו ובחרו משמרת אחרת. החלפתם משמרת עם מישהו, לקחתם יום חופש, קראו לכם פתאום — בשביל זה זה.</string>
+    <string name="guide_one_day_2">רק היום הזה משתנה. הסבב עצמו לא זז, אז כל שאר השנה נשארת במקום. היום מקבל נקודה אדומה שמסמנת שזה אתם ולא הסבב. הקישו עליו שוב ולחצו \"איפוס\" כדי להחזיר אותו.</string>
+
+    <string name="guide_rotation_title">שינוי הסבב כולו</string>
+    <string name="guide_rotation_1">הפס בתחתית היומן מציג את הסבב שאתם עליו. הקישו עליו, או על העיפרון בסרגל העליון, כדי לבחור סבב אחר או לבנות משלכם.</string>
+    <string name="guide_rotation_2">שינוי הסבב מוחק את הימים הבודדים ששיניתם ידנית. הם היו תיקונים לסבב הישן, ומול הסבב החדש הם יהיו שגויים.</string>
+
+    <string name="guide_offset_title">הכל מוזז ביום או יומיים</string>
+    <string name="guide_offset_1">זו התקלה הרגילה, ולא שווה לבנות בגללה את הסבב מחדש. זה אומר שתאריך ההתחלה שנתתם לא מדויק — צורת המחזור נכונה, הוא פשוט יושב על התאריכים הלא נכונים.</string>
+    <string name="guide_offset_2">פתחו את הסבב מהפס שבתחתית היומן. למעלה יש כפתורים שמזיזים את כל הסבב יום אחורה או יום קדימה. הזיזו עד שהיומן מתאים למשמרות שבאמת עבדתם השבוע. ימים ששיניתם ידנית יישארו במקומם.</string>
+
+    <string name="guide_widget_title">על מסך הבית</string>
+    <string name="guide_widget_1">ל־Shiftly יש ווידג׳ט שמראה את המשמרת של היום ומתי המשמרת הבאה. לחצו לחיצה ארוכה על אזור ריק במסך הבית, בחרו \"ווידג׳טים\", ומצאו את Shiftly ברשימה.</string>
+
+    <string name="guide_reminder_title">בערב שלפני</string>
+    <string name="guide_reminder_1">אם תאשרו התראות, Shiftly תזכיר לכם בערב שלפני כל יום עבודה. בימי חופש אין התראה.</string>
+
+    <string name="guide_privacy_title">הלוח שלכם נשאר בטלפון</string>
+    <string name="guide_privacy_1">אין חשבון ואין התחברות, והסבב שלכם לא נשלח לשום מקום. הוא נשמר על הטלפון הזה בלבד — מה שאומר גם שהסרת האפליקציה מוחקת אותו.</string>
+
+    <!-- Ready-made rotations -->
+    <string name="preset_4on4off_days">4 עבודה, 4 חופש</string>
+    <string name="preset_4on4off_days_desc">ארבעה ימים של 12 שעות, ואז ארבעה ימי חופש. מחזור של 8 ימים.</string>
+    <string name="preset_4on4off_dn">4 עבודה, 4 חופש — ימים ולילות</string>
+    <string name="preset_4on4off_dn_desc">ארבעה ימי עבודה, ארבעה חופש, ארבעה לילות, ארבעה חופש. מחזור של 16 ימים.</string>
+    <string name="preset_panama_days">פנמה (2-2-3)</string>
+    <string name="preset_panama_days_desc">2 עבודה, 2 חופש, 3 עבודה, 2 חופש, 2 עבודה, 3 חופש. מחזור של 14 ימים.</string>
+    <string name="preset_panama_dn">פנמה (2-2-3) — ימים ולילות</string>
+    <string name="preset_panama_dn_desc">מחזור 2-2-3 מלא בימים, ואז אותו דבר בלילות. מחזור של 28 ימים.</string>
+    <string name="preset_dupont">דופונט</string>
+    <string name="preset_dupont_desc">מחזור 12 השעות הקלאסי בן 28 הימים, שנגמר בשבוע חופש שלם.</string>
+    <string name="preset_3on3off">3 עבודה, 3 חופש</string>
+    <string name="preset_3on3off_desc">שלושה ימים של 12 שעות, שלושה חופש. מחזור של 6 ימים.</string>
+    <string name="preset_7on7off">7 עבודה, 7 חופש</string>
+    <string name="preset_7on7off_desc">שבוע שלם עבודה, שבוע שלם חופש. מחזור של 14 ימים.</string>
+    <string name="preset_5on2off">5 עבודה, 2 חופש</string>
+    <string name="preset_5on2off_desc">שבוע עבודה רגיל. כדאי לעגן ליום ראשון. מחזור של 7 ימים.</string>
+    <string name="preset_6on2off">6 עבודה, 2 חופש</string>
+    <string name="preset_6on2off_desc">שישה עבודה, שניים חופש — נודד לאורך השבוע. מחזור של 8 ימים.</string>
+    <string name="preset_week_days_nights">שבוע ימים, שבוע לילות</string>
+    <string name="preset_week_days_nights_desc">חמישה ימי עבודה, שניים חופש, חמישה לילות, שניים חופש. מחזור של 14 ימים.</string>
+    <string name="preset_24_48">24 עבודה, 48 חופש</string>
+    <string name="preset_24_48_desc">משמרת של 24 שעות, ואז יומיים חופש. מחזור של 3 ימים.</string>
+    <string name="preset_48_96">48 עבודה, 96 חופש</string>
+    <string name="preset_48_96_desc">שתי משמרות של 24 שעות ברצף, ואז ארבעה ימי חופש. מחזור של 6 ימים.</string>
+    <string name="preset_kelly">קלי</string>
+    <string name="preset_kelly_desc">שלוש משמרות של 24 שעות בימים לסירוגין, ואז ארבעה ימי חופש. מחזור של 9 ימים.</string>
+</resources>

@@ -3,6 +3,7 @@ package com.shiftly.planner.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.shiftly.planner.R
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftPattern
@@ -53,11 +54,16 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
      * Overrides are deliberately cleared: they were corrections against the *old* rotation and
      * would silently corrupt the new one.
      */
-    fun applyPreset(preset: ShiftPreset, startDate: LocalDate) = mutate { current ->
+    fun applyPreset(
+        preset: ShiftPreset,
+        startDate: LocalDate,
+        /** What the picker showed, so a schedule set up in Hebrew is not labelled in English. */
+        name: String = preset.name,
+    ) = mutate { current ->
         current.copy(
             pattern = ShiftPattern(
                 id = UUID.randomUUID().toString(),
-                name = preset.name,
+                name = name,
                 cycle = preset.cycle,
                 anchorEpochDay = startDate.toEpochDay(),
             ),
@@ -68,10 +74,11 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
     /** Applies a cycle the user tapped out themselves. */
     fun applyCustomPattern(name: String, cycle: List<String>, startDate: LocalDate) =
         mutate { current ->
+            val fallback = getApplication<Application>().getString(R.string.default_rotation_name)
             current.copy(
                 pattern = ShiftPattern(
                     id = UUID.randomUUID().toString(),
-                    name = name.ifBlank { "My rotation" },
+                    name = name.ifBlank { fallback },
                     cycle = cycle,
                     anchorEpochDay = startDate.toEpochDay(),
                 ),
