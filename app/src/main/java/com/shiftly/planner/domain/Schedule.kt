@@ -47,6 +47,36 @@ data class Schedule(
         return if (missing.isEmpty()) this else copy(shiftTypes = shiftTypes + missing)
     }
 
+    /** Adds [type], or replaces the stored one carrying the same id. */
+    fun withShiftType(type: ShiftType): Schedule {
+        val index = shiftTypes.indexOfFirst { it.id == type.id }
+        return if (index < 0) {
+            copy(shiftTypes = shiftTypes + type)
+        } else {
+            copy(shiftTypes = shiftTypes.toMutableList().also { it[index] = type })
+        }
+    }
+
+    /** True while the rotation, or any hand-edited day, still refers to [typeId]. */
+    fun isShiftTypeInUse(typeId: String): Boolean =
+        pattern?.cycle?.contains(typeId) == true || overrides.containsValue(typeId)
+
+    /**
+     * Removes a shift type.
+     *
+     * Refuses while the type is still in use: [shiftOn] resolves an unknown id to no shift at all,
+     * so deleting one out from under a rotation would blank every day it covers. Callers are
+     * expected to check [isShiftTypeInUse] and not offer the option; this is the backstop.
+     *
+     * A built-in cannot be removed either — [withBuiltinTypes] would put it straight back on the
+     * next load, which reads as the delete having silently failed.
+     */
+    fun withoutShiftType(typeId: String): Schedule = when {
+        isShiftTypeInUse(typeId) -> this
+        ShiftType.defaults.any { it.id == typeId } -> this
+        else -> copy(shiftTypes = shiftTypes.filterNot { it.id == typeId })
+    }
+
     fun withOverride(date: LocalDate, shiftTypeId: String): Schedule =
         copy(overrides = overrides + (date.toEpochDay() to shiftTypeId))
 

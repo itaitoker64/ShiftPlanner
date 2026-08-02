@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Re-arms tomorrow's reminder after the device restarts. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Writing the rota into a calendar the user picks. Reading is needed too: without it
+         there is no list of calendars to offer them. Both are runtime-requested, and the app
+         works without them. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <!-- Required by the Google Mobile Ads SDK on Android 13+. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 

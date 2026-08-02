@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -154,6 +155,78 @@ class ScreenRenderTest {
         }
 
         compose.onNodeWithContentDescription("How this app works").assertExists()
+    }
+
+    @Test
+    fun `the first-run walkthrough composes and can be skipped`() {
+        compose.setContent {
+            ShiftlyTheme {
+                OnboardingScreen(
+                    viewModel = viewModel(),
+                    onFinished = {},
+                    today = anchor,
+                )
+            }
+        }
+
+        // Step one, with the way out for anyone who would rather do it themselves.
+        compose.onNodeWithText("Let's build your schedule").assertIsDisplayed()
+        compose.onNodeWithText("Skip and set it up myself").assertExists()
+    }
+
+    @Test
+    fun `the walkthrough will not advance past the welcome without a rotation`() {
+        compose.setContent {
+            ShiftlyTheme {
+                OnboardingScreen(viewModel = viewModel(), onFinished = {}, today = anchor)
+            }
+        }
+
+        compose.onNodeWithText("Next").performClick()
+        compose.waitForIdle()
+        // Now on the rotation step, where Next stays disabled until one is picked: every later
+        // step is about a rotation that does not exist yet.
+        compose.onNodeWithText("Which rotation do you work?").assertExists()
+        compose.onNodeWithText("Next").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `picking a rotation reaches the preview of the next fortnight`() {
+        compose.setContent {
+            ShiftlyTheme {
+                OnboardingScreen(viewModel = viewModel(), onFinished = {}, today = anchor)
+            }
+        }
+
+        compose.onNodeWithText("Next").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText(Presets.all.first().name).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Next").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("When does your cycle start?").assertExists()
+        compose.onNodeWithText("The next two weeks").assertExists()
+    }
+
+    @Test
+    fun `shift times screen composes and lists the built-in shifts`() {
+        compose.setContent {
+            ShiftlyTheme { ShiftTypesScreen(viewModel = viewModel(), onDone = {}) }
+        }
+
+        compose.onNodeWithText("Shift times").assertIsDisplayed()
+        // The hours the app shipped with, which this screen exists to let people change.
+        compose.onNodeWithText("07:00 – 19:00 · 12h").assertExists()
+    }
+
+    @Test
+    fun `calendar sync screen composes and asks for permission first`() {
+        compose.setContent {
+            ShiftlyTheme { CalendarSyncScreen(viewModel = viewModel(), onDone = {}) }
+        }
+
+        compose.onNodeWithText("Add to your calendar").assertIsDisplayed()
     }
 
     @Test

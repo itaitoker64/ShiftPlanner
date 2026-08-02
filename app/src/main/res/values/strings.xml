@@ -165,4 +165,73 @@
     <string name="preset_48_96_desc">Two 24-hour tours back to back, then four days off. 6-day cycle.</string>
     <string name="preset_kelly">Kelly</string>
     <string name="preset_kelly_desc">Three 24-hour tours on alternate days, then four days off. 9-day cycle.</string>
+
+    <!-- Shift times -->
+    <string name="shift_times_title">Shift times</string>
+    <string name="shift_times_intro">Nobody said a day shift runs 07:00 to 19:00. Tap a shift to set when yours actually starts and ends.</string>
+    <string name="shift_add">Add a shift</string>
+    <string name="shift_not_worked">Not a working shift</string>
+    <!-- 1: start time. 2: end time. 3: length in whole hours. -->
+    <string name="shift_hours_summary">%1$s – %2$s · %3$dh</string>
+    <string name="shift_name_label">Name</string>
+    <string name="shift_letter_label">Letter shown in the calendar</string>
+    <string name="shift_is_working">This is a working shift</string>
+    <string name="shift_is_working_help">Turn this off for days off, leave or anything else you are not paid for.</string>
+    <!-- 1: the time it starts. -->
+    <string name="shift_starts_at">Starts %1$s</string>
+    <!-- 1: the time it ends. -->
+    <string name="shift_ends_at">Ends %1$s</string>
+    <!-- 1: whole hours. 2: leftover minutes. -->
+    <string name="shift_lasts">That is %1$dh %2$dm long</string>
+    <string name="shift_colour">Colour</string>
+    <string name="shift_save">Save</string>
+    <string name="shift_delete">Delete this shift</string>
+
+    <!-- First run -->
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_finish">Finish</string>
+    <string name="onboarding_skip">Skip and set it up myself</string>
+    <string name="onboarding_welcome_title">Let\'s build your schedule</string>
+    <string name="onboarding_welcome_1">Four questions, and Shiftly fills in every month you will ever work.</string>
+    <string name="onboarding_welcome_2">You can change any of it later. Nothing is saved until the last step.</string>
+    <string name="onboarding_rotation_title">Which rotation do you work?</string>
+    <string name="onboarding_rotation_body">Pick the one that matches your pattern. If none of them do, skip this and build your own afterwards.</string>
+    <string name="onboarding_start_title">When does your cycle start?</string>
+    <string name="onboarding_start_body">Move it until the fortnight below matches the shifts you are actually working.</string>
+    <!-- 1: the chosen date. -->
+    <string name="onboarding_day_one_is">Day 1 is %1$s</string>
+    <string name="onboarding_preview_label">The next two weeks</string>
+    <string name="onboarding_preview_help">This is exactly what your calendar will look like. If it is wrong, nudge the date above.</string>
+    <string name="onboarding_hours_title">When are your shifts?</string>
+    <string name="onboarding_hours_body">These are the shifts your rotation uses. Tap one to set the hours you actually work.</string>
+    <string name="onboarding_done_title">That is everything</string>
+    <string name="onboarding_done_body">Your calendar is ready. You can change your rotation, your hours or any single day whenever you like.</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Add to your calendar</string>
+    <string name="calendar_intro">Puts your shifts into a calendar on this phone, so they show up wherever that calendar does.</string>
+    <string name="calendar_needs_rotation">Set up a rotation first — there are no shifts to add yet.</string>
+    <string name="calendar_permission_why">Shiftly needs permission to see your calendars and add events to the one you pick. It only ever touches the events it created itself.</string>
+    <string name="calendar_allow">Allow calendar access</string>
+    <string name="calendar_none_writable">No calendar on this phone can be written to. Add an account in your calendar app first.</string>
+    <string name="calendar_choose">Which calendar?</string>
+    <string name="calendar_how_far">How far ahead?</string>
+    <!-- 1: number of months. -->
+    <string name="calendar_months">%1$d months</string>
+    <string name="calendar_add">Add my shifts</string>
+    <string name="calendar_update">Update my shifts</string>
+    <string name="calendar_working">Writing your shifts…</string>
+    <!-- 1: how many events were written. -->
+    <string name="calendar_done">Added %1$d shifts to your calendar.</string>
+    <string name="calendar_removed">Removed the shifts Shiftly had added.</string>
+    <string name="calendar_remove">Remove them again</string>
+    <string name="calendar_rerun_note">Change your rotation or a single day, then come back and update — Shiftly replaces what it added last time rather than adding it twice.</string>
+    <string name="calendar_event_description">Added by Shiftly</string>
+
+    <!-- Entry points on the rotation screen -->
+    <string name="setup_shift_times_row">Shift times</string>
+    <string name="setup_shift_times_row_help">Set when your shifts start and end</string>
+    <string name="setup_calendar_row">Add to your calendar</string>
+    <string name="setup_calendar_row_help">Put your shifts in the phone\'s calendar</string>
 </resources>

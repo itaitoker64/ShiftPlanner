@@ -76,6 +76,8 @@ fun SetupScreen(
     viewModel: ScheduleViewModel,
     onDone: () -> Unit,
     onShowGuide: () -> Unit = {},
+    onShowShiftTimes: () -> Unit = {},
+    onShowCalendarSync: () -> Unit = {},
 ) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     var useCustom by remember { mutableStateOf(false) }
@@ -111,6 +113,18 @@ fun SetupScreen(
                     patternName = pattern.name,
                     onNudge = viewModel::nudgeAnchor,
                 )
+                LinkRow(
+                    title = stringResource(R.string.setup_shift_times_row),
+                    subtitle = stringResource(R.string.setup_shift_times_row_help),
+                    onClick = onShowShiftTimes,
+                )
+                Spacer(Modifier.size(8.dp))
+                LinkRow(
+                    title = stringResource(R.string.setup_calendar_row),
+                    subtitle = stringResource(R.string.setup_calendar_row_help),
+                    onClick = onShowCalendarSync,
+                )
+                Spacer(Modifier.size(16.dp))
             }
 
             Row(
@@ -174,6 +188,32 @@ private fun FirstRunIntro(onShowGuide: () -> Unit) {
         Spacer(Modifier.size(4.dp))
         TextButton(onClick = onShowGuide, contentPadding = PaddingValues(0.dp)) {
             Text(stringResource(R.string.guide_link))
+        }
+    }
+}
+
+/** A tappable row leading off this screen — shift hours, calendar sync. */
+@Composable
+private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick),
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -265,7 +305,7 @@ private fun PresetPicker(
 }
 
 @Composable
-private fun PresetCard(
+internal fun PresetCard(
     preset: ShiftPreset,
     shiftTypes: List<ShiftType>,
     isSelected: Boolean,
@@ -304,9 +344,14 @@ private fun PresetCard(
     }
 }
 
-/** A horizontal strip of coloured squares — the fastest way to recognise your own rotation. */
+/**
+ * A horizontal strip of coloured squares — the fastest way to recognise your own rotation.
+ *
+ * Internal so the first-run walkthrough shows the same strip; two drawings of one cycle would
+ * drift.
+ */
 @Composable
-private fun CyclePreview(cycle: List<String>, shiftTypes: List<ShiftType>) {
+internal fun CyclePreview(cycle: List<String>, shiftTypes: List<ShiftType>) {
     val context = LocalContext.current
     val byId = remember(shiftTypes) { shiftTypes.associateBy { it.id } }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(3.dp)) {

@@ -153,4 +153,66 @@
     <string name="preset_48_96_desc">שתי משמרות של 24 שעות ברצף, ואז ארבעה ימי חופש. מחזור של 6 ימים.</string>
     <string name="preset_kelly">קלי</string>
     <string name="preset_kelly_desc">שלוש משמרות של 24 שעות בימים לסירוגין, ואז ארבעה ימי חופש. מחזור של 9 ימים.</string>
+
+    <!-- Shift times -->
+    <string name="shift_times_title">שעות המשמרות</string>
+    <string name="shift_times_intro">אף אחד לא אמר שמשמרת יום היא 07:00 עד 19:00. הקישו על משמרת כדי לקבוע מתי שלכם באמת מתחילה ונגמרת.</string>
+    <string name="shift_add">הוספת משמרת</string>
+    <string name="shift_not_worked">לא משמרת עבודה</string>
+    <string name="shift_hours_summary">%1$s – %2$s · %3$d ש׳</string>
+    <string name="shift_name_label">שם</string>
+    <string name="shift_letter_label">האות שמוצגת ביומן</string>
+    <string name="shift_is_working">זו משמרת עבודה</string>
+    <string name="shift_is_working_help">כבו את זה לימי חופש, חופשה או כל דבר אחר שלא מקבלים עליו שכר.</string>
+    <string name="shift_starts_at">מתחילה ב־%1$s</string>
+    <string name="shift_ends_at">נגמרת ב־%1$s</string>
+    <string name="shift_lasts">זה אורך %1$d ש׳ %2$d ד׳</string>
+    <string name="shift_colour">צבע</string>
+    <string name="shift_save">שמירה</string>
+    <string name="shift_delete">מחיקת המשמרת הזו</string>
+
+    <!-- First run -->
+    <string name="onboarding_back">חזרה</string>
+    <string name="onboarding_next">הבא</string>
+    <string name="onboarding_finish">סיום</string>
+    <string name="onboarding_skip">דלגו, אגדיר בעצמי</string>
+    <string name="onboarding_welcome_title">בואו נבנה את הלוח שלכם</string>
+    <string name="onboarding_welcome_1">ארבע שאלות, ו־Shiftly תמלא כל חודש שתעבדו אי פעם.</string>
+    <string name="onboarding_welcome_2">אפשר לשנות הכל אחר כך. שום דבר לא נשמר עד השלב האחרון.</string>
+    <string name="onboarding_rotation_title">איזה סבב אתם עובדים?</string>
+    <string name="onboarding_rotation_body">בחרו את זה שמתאים לתבנית שלכם. אם אף אחד לא מתאים, דלגו ובנו סבב משלכם אחר כך.</string>
+    <string name="onboarding_start_title">מתי המחזור שלכם מתחיל?</string>
+    <string name="onboarding_start_body">הזיזו עד שהשבועיים למטה מתאימים למשמרות שאתם באמת עובדים.</string>
+    <string name="onboarding_day_one_is">יום 1 הוא %1$s</string>
+    <string name="onboarding_preview_label">השבועיים הקרובים</string>
+    <string name="onboarding_preview_help">ככה בדיוק ייראה היומן שלכם. אם זה לא נכון, הזיזו את התאריך למעלה.</string>
+    <string name="onboarding_hours_title">מתי המשמרות שלכם?</string>
+    <string name="onboarding_hours_body">אלה המשמרות שהסבב שלכם משתמש בהן. הקישו על אחת כדי לקבוע את השעות שאתם באמת עובדים.</string>
+    <string name="onboarding_done_title">זה הכל</string>
+    <string name="onboarding_done_body">היומן שלכם מוכן. אפשר לשנות את הסבב, את השעות או כל יום בודד מתי שבא לכם.</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">הוספה ליומן</string>
+    <string name="calendar_intro">מוסיף את המשמרות שלכם ליומן בטלפון הזה, כך שהן יופיעו בכל מקום שהיומן הזה מופיע בו.</string>
+    <string name="calendar_needs_rotation">קודם הגדירו סבב — אין עדיין משמרות להוסיף.</string>
+    <string name="calendar_permission_why">Shiftly צריכה הרשאה לראות את היומנים שלכם ולהוסיף אירועים לזה שתבחרו. היא נוגעת רק באירועים שהיא עצמה יצרה.</string>
+    <string name="calendar_allow">אישור גישה ליומן</string>
+    <string name="calendar_none_writable">אין בטלפון הזה יומן שאפשר לכתוב אליו. הוסיפו קודם חשבון באפליקציית היומן.</string>
+    <string name="calendar_choose">לאיזה יומן?</string>
+    <string name="calendar_how_far">כמה קדימה?</string>
+    <string name="calendar_months">%1$d חודשים</string>
+    <string name="calendar_add">הוספת המשמרות שלי</string>
+    <string name="calendar_update">עדכון המשמרות שלי</string>
+    <string name="calendar_working">כותב את המשמרות שלכם…</string>
+    <string name="calendar_done">נוספו %1$d משמרות ליומן שלכם.</string>
+    <string name="calendar_removed">המשמרות ש־Shiftly הוסיפה הוסרו.</string>
+    <string name="calendar_remove">הסרה מהיומן</string>
+    <string name="calendar_rerun_note">שנו את הסבב או יום בודד, חזרו לכאן ועדכנו — Shiftly מחליפה את מה שהוסיפה בפעם הקודמת במקום להוסיף פעמיים.</string>
+    <string name="calendar_event_description">נוסף על ידי Shiftly</string>
+
+    <!-- Entry points on the rotation screen -->
+    <string name="setup_shift_times_row">שעות המשמרות</string>
+    <string name="setup_shift_times_row_help">קביעת מתי המשמרות מתחילות ונגמרות</string>
+    <string name="setup_calendar_row">הוספה ליומן</string>
+    <string name="setup_calendar_row_help">הוספת המשמרות ליומן של הטלפון</string>
 </resources>

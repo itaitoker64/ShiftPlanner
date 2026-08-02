@@ -4,17 +4,22 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.shiftly.planner.R
+import com.shiftly.planner.calendar.CalendarSync
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftPattern
 import com.shiftly.planner.domain.ShiftPreset
+import com.shiftly.planner.domain.ShiftType
 import com.shiftly.planner.widget.ShiftWidgetUpdater
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
@@ -34,6 +39,73 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _selectedDate = MutableStateFlow<LocalDate?>(null)
     val selectedDate: StateFlow<LocalDate?> = _selectedDate.asStateFlow()
+
+    /**
+     * False until the first-run walkthrough has been finished or skipped.
+     *
+     * Kept out of [Schedule] deliberately: it says something about this install, not about the
+     * rota, and the schedule blob is what gets backed up and restored.
+     */
+    val onboardingComplete: StateFlow<Boolean> = repository.onboardingComplete.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = true,
+    )
+
+    fun markOnboardingComplete() {
+        viewModelScope.launch { repository.setOnboardingComplete() }
+    }
+
+    val syncedCalendarId: StateFlow<Long?> = repository.syncedCalendarId.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null,
+    )
+
+    private val _calendarStatus = MutableStateFlow<CalendarStatus>(CalendarStatus.Idle)
+    val calendarStatus: StateFlow<CalendarStatus> = _calendarStatus.asStateFlow()
+
+    /**
+     * Writes a rolling window of shifts into [calendarId], replacing anything written before.
+     *
+     * On the IO dispatcher because it is a content-provider round trip per shift — a year of a
+     * 4-on-4-off rota is around 180 inserts, which is not a main-thread amount of work.
+     */
+    fun syncToCalendar(calendarId: Long, months: Long) {
+        viewModelScope.launch {
+            _calendarStatus.value = CalendarStatus.Working
+            val current = schedule.value
+            val previous = repository.exportedEventIds.first()
+            val written = withContext(Dispatchers.IO) {
+                CalendarSync.sync(
+                    context = getApplication(),
+                    schedule = current,
+                    calendarId = calendarId,
+                    previouslyWritten = previous,
+                    months = months,
+                )
+            }
+            repository.setCalendarSync(calendarId, written)
+            _calendarStatus.value = CalendarStatus.Synced(written.size)
+        }
+    }
+
+    /** Takes back every event this app wrote, and forgets the calendar. */
+    fun removeFromCalendar() {
+        viewModelScope.launch {
+            _calendarStatus.value = CalendarStatus.Working
+            val previous = repository.exportedEventIds.first()
+            withContext(Dispatchers.IO) {
+                CalendarSync.removeAll(getApplication(), previous)
+            }
+            repository.setCalendarSync(null, emptySet())
+            _calendarStatus.value = CalendarStatus.Removed
+        }
+    }
+
+    fun clearCalendarStatus() {
+        _calendarStatus.value = CalendarStatus.Idle
+    }
 
     fun showMonth(month: YearMonth) {
         _visibleMonth.value = month
@@ -102,6 +174,12 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Adds a shift type, or saves an edit to an existing one. */
+    fun saveShiftType(type: ShiftType) = mutate { it.withShiftType(type) }
+
+    /** No-op while the type is still on the rotation — see [Schedule.withoutShiftType]. */
+    fun deleteShiftType(typeId: String) = mutate { it.withoutShiftType(typeId) }
+
     fun clearOverride(date: LocalDate) = mutate { it.withoutOverride(date) }
 
     fun clearAllOverrides() = mutate { it.copy(overrides = emptyMap()) }
@@ -113,4 +191,12 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
             ShiftWidgetUpdater.requestUpdate(getApplication())
         }
     }
+}
+
+/** Where a calendar sync has got to, for the screen that started it. */
+sealed interface CalendarStatus {
+    data object Idle : CalendarStatus
+    data object Working : CalendarStatus
+    data class Synced(val eventCount: Int) : CalendarStatus
+    data object Removed : CalendarStatus
 }

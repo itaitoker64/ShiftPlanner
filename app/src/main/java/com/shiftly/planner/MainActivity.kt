@@ -20,9 +20,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shiftly.planner.ads.BannerAd
 import com.shiftly.planner.ads.ConsentManager
 import com.shiftly.planner.ui.CalendarScreen
+import com.shiftly.planner.ui.CalendarSyncScreen
 import com.shiftly.planner.ui.GuideScreen
+import com.shiftly.planner.ui.OnboardingScreen
 import com.shiftly.planner.ui.ScheduleViewModel
 import com.shiftly.planner.ui.SetupScreen
+import com.shiftly.planner.ui.ShiftTypesScreen
 import com.shiftly.planner.ui.theme.ShiftlyTheme
 
 class MainActivity : ComponentActivity() {
@@ -53,37 +56,64 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Which screen is in front. No navigation library for three destinations. */
-private enum class Destination { Calendar, Setup, Guide }
+/** Which screen is in front. Still no navigation library, but the list is growing. */
+private enum class Destination { Calendar, Setup, Guide, Onboarding, ShiftTimes, CalendarSync }
 
 /**
- * Three screens: the calendar, the rotation setup, and the guide explaining both.
+ * The calendar, the rotation setup, the guide, the shift-times editor, calendar sync, and the
+ * first-run walkthrough that comes before all of them.
  *
- * Setup is forced open on a fresh install because a calendar with no rotation has nothing to show.
+ * The walkthrough wins over everything on a fresh install. Past that, setup is forced open while
+ * there is no rotation, because a calendar with no rotation has nothing to show.
  */
 @Composable
 private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
+    val onboardingComplete by viewModel.onboardingComplete.collectAsStateWithLifecycle()
     var editingPattern by remember { mutableStateOf(false) }
     var showingGuide by remember { mutableStateOf(false) }
+    var showingShiftTimes by remember { mutableStateOf(false) }
+    var showingCalendarSync by remember { mutableStateOf(false) }
 
     val needsSetup = schedule.pattern == null
     val destination = when {
+        !onboardingComplete -> Destination.Onboarding
         showingGuide -> Destination.Guide
+        showingShiftTimes -> Destination.ShiftTimes
+        showingCalendarSync -> Destination.CalendarSync
         needsSetup || editingPattern -> Destination.Setup
         else -> Destination.Calendar
     }
 
-    // Back closes the guide rather than the app, matching the arrow in its top bar.
+    // Back leaves the screen you are on rather than the app, matching the arrow in each top bar.
     BackHandler(enabled = showingGuide) { showingGuide = false }
+    BackHandler(enabled = showingShiftTimes) { showingShiftTimes = false }
+    BackHandler(enabled = showingCalendarSync) { showingCalendarSync = false }
 
     when (destination) {
+        Destination.Onboarding -> OnboardingScreen(
+            viewModel = viewModel,
+            onFinished = { /* onboardingComplete flips and re-routes on its own. */ },
+        )
+
         Destination.Guide -> GuideScreen(onDone = { showingGuide = false })
+
+        Destination.ShiftTimes -> ShiftTypesScreen(
+            viewModel = viewModel,
+            onDone = { showingShiftTimes = false },
+        )
+
+        Destination.CalendarSync -> CalendarSyncScreen(
+            viewModel = viewModel,
+            onDone = { showingCalendarSync = false },
+        )
 
         Destination.Setup -> SetupScreen(
             viewModel = viewModel,
             onDone = { editingPattern = false },
             onShowGuide = { showingGuide = true },
+            onShowShiftTimes = { showingShiftTimes = true },
+            onShowCalendarSync = { showingCalendarSync = true },
         )
 
         Destination.Calendar -> {

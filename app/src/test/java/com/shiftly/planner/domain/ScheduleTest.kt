@@ -280,6 +280,111 @@ class ScheduleTest {
     }
 }
 
+class EditableShiftTypeTest {
+
+    private val anchor = LocalDate.of(2026, 1, 1)
+
+    private fun scheduleWith(cycle: List<String>) = Schedule(
+        pattern = ShiftPattern("test", "Test", cycle, anchor.toEpochDay()),
+    )
+
+    @Test
+    fun `editing a shift type changes the hours every day of that type reports`() {
+        // The whole point: nobody said a day shift runs 07:00-19:00.
+        val schedule = scheduleWith(listOf(ID_DAY, ID_OFF))
+        val earlies = ShiftType.DAY.copy(startMinute = 6 * 60, endMinute = 14 * 60)
+
+        val edited = schedule.withShiftType(earlies)
+
+        assertEquals(8 * 60, edited.shiftOn(anchor)?.durationMinutes)
+        // And the month total follows, because it is summed from the same types.
+        assertEquals(
+            edited.monthSummary(YearMonth.of(2026, 1)).workingDays * 8 * 60,
+            edited.monthSummary(YearMonth.of(2026, 1)).totalMinutes,
+        )
+    }
+
+    @Test
+    fun `editing replaces rather than appends`() {
+        val schedule = Schedule()
+        val before = schedule.shiftTypes.size
+
+        val edited = schedule.withShiftType(ShiftType.NIGHT.copy(name = "Nights"))
+
+        assertEquals(before, edited.shiftTypes.size)
+        assertEquals("Nights", edited.typeOrNull(ShiftType.ID_NIGHT)?.name)
+    }
+
+    @Test
+    fun `a new type is added and resolvable`() {
+        val onCall = ShiftType(
+            id = "custom_on_call",
+            name = "On call",
+            abbreviation = "OC",
+            colorArgb = 0xFF00796B,
+            startMinute = 8 * 60,
+            endMinute = 20 * 60,
+        )
+
+        val edited = Schedule().withShiftType(onCall)
+
+        assertEquals(onCall, edited.typeOrNull("custom_on_call"))
+    }
+
+    @Test
+    fun `a type used by the rotation cannot be deleted`() {
+        val schedule = scheduleWith(listOf(ID_DAY, ID_OFF))
+            .withShiftType(ShiftType.DAY.copy(id = "custom", name = "Mine"))
+
+        assertTrue(schedule.isShiftTypeInUse(ID_DAY))
+        // Removing it would blank every day the rotation puts it on.
+        assertEquals(schedule, schedule.withoutShiftType(ID_DAY))
+    }
+
+    @Test
+    fun `a type used only by a hand-edited day cannot be deleted either`() {
+        val custom = ShiftType("custom", "Mine", "M", 0xFF112233)
+        val schedule = scheduleWith(listOf(ID_OFF))
+            .withShiftType(custom)
+            .withOverride(anchor, "custom")
+
+        assertTrue(schedule.isShiftTypeInUse("custom"))
+        assertEquals(schedule, schedule.withoutShiftType("custom"))
+    }
+
+    @Test
+    fun `an unused custom type can be deleted`() {
+        val custom = ShiftType("custom", "Mine", "M", 0xFF112233)
+        val schedule = scheduleWith(listOf(ID_OFF)).withShiftType(custom)
+
+        val edited = schedule.withoutShiftType("custom")
+
+        assertNull(edited.typeOrNull("custom"))
+    }
+
+    @Test
+    fun `a built-in cannot be deleted, because loading would put it back`() {
+        // withBuiltinTypes backfills the defaults, so a deleted built-in would reappear on the
+        // next load and read as the delete having silently failed.
+        val schedule = scheduleWith(listOf(ID_OFF))
+        assertFalse(schedule.isShiftTypeInUse(ID_NIGHT))
+
+        assertEquals(schedule, schedule.withoutShiftType(ID_NIGHT))
+    }
+
+    @Test
+    fun `an edited built-in survives the built-in backfill`() {
+        // withBuiltinTypes only adds ids that are missing entirely, so it must not overwrite hours
+        // the user has changed.
+        val edited = Schedule()
+            .withShiftType(ShiftType.DAY.copy(startMinute = 6 * 60, endMinute = 18 * 60))
+            .withBuiltinTypes()
+
+        assertEquals(6 * 60, edited.typeOrNull(ID_DAY)?.startMinute)
+        assertEquals(12 * 60, edited.typeOrNull(ID_DAY)?.durationMinutes)
+    }
+}
+
 class ShiftTypeTest {
 
     @Test
