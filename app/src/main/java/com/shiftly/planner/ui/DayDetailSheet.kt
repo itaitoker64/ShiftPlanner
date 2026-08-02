@@ -2,6 +2,7 @@ package com.shiftly.planner.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,10 +98,20 @@ fun DayDetailSheet(
             Spacer(Modifier.size(20.dp))
 
             Text("Change this day", style = MaterialTheme.typography.labelLarge)
-            Spacer(Modifier.size(8.dp))
+            Text(
+                text = "Only this day changes — your rotation stays as it is.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.size(10.dp))
 
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(schedule.shiftTypes, key = { it.id }) { type ->
+            // A scrolling Row rather than a LazyRow: a handful of choices does not justify the
+            // lazy machinery, and scrolling still saves the labels from clipping on a narrow phone.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                schedule.shiftTypes.forEach { type ->
                     ShiftChoice(
                         type = type,
                         isSelected = type.id == current?.id,
@@ -135,16 +145,17 @@ private fun ShiftChoice(type: ShiftType, isSelected: Boolean, onClick: () -> Uni
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(onClick = onClick),
     ) {
+        val fill = Color(type.colorArgb.toInt())
         Box(
             modifier = Modifier
                 .size(52.dp)
                 .clip(CircleShape)
-                .background(Color(type.colorArgb.toInt())),
+                .background(fill),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = type.abbreviation.ifEmpty { "–" },
-                color = if (type.isWorking) Color.White else MaterialTheme.colorScheme.onSurface,
+                color = textOn(fill),
                 fontWeight = FontWeight.Bold,
             )
         }

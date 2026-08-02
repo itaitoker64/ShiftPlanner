@@ -2,9 +2,11 @@ package com.shiftly.planner.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -39,6 +43,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
@@ -61,25 +66,44 @@ private val START_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d M
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetupScreen(viewModel: ScheduleViewModel, onDone: () -> Unit) {
+fun SetupScreen(
+    viewModel: ScheduleViewModel,
+    onDone: () -> Unit,
+    onShowGuide: () -> Unit = {},
+) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     var useCustom by remember { mutableStateOf(false) }
+    val pattern = schedule.pattern
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Your rotation") },
                 navigationIcon = {
-                    if (schedule.pattern != null) {
+                    if (pattern != null) {
                         IconButton(onClick = onDone) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                         }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onShowGuide) {
+                        Icon(Icons.Outlined.HelpOutline, "How this app works")
                     }
                 },
             )
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
+            if (pattern == null) {
+                FirstRunIntro(onShowGuide)
+            } else {
+                NudgeCard(
+                    patternName = pattern.name,
+                    onNudge = viewModel::nudgeAnchor,
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -114,6 +138,77 @@ fun SetupScreen(viewModel: ScheduleViewModel, onDone: () -> Unit) {
                         onDone()
                     },
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Shown only on a fresh install, where the app opens straight onto this screen.
+ *
+ * Landing on thirteen unexplained preset cards is the point people bounce off, so this says what
+ * the app is for and what the one decision on this screen actually is.
+ */
+@Composable
+private fun FirstRunIntro(onShowGuide: () -> Unit) {
+    Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+        Text(
+            text = "Pick the rotation you work, and Shiftly fills in your calendar for every " +
+                "month ahead.",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(Modifier.size(6.dp))
+        Text(
+            text = "Choose one below, or build your own if it isn't listed. You can change it " +
+                "later.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.size(4.dp))
+        TextButton(onClick = onShowGuide, contentPadding = PaddingValues(0.dp)) {
+            Text("How this app works")
+        }
+    }
+}
+
+/**
+ * Moves the whole rotation a day at a time.
+ *
+ * Getting the start date wrong by a day or two is the most common way to end up with a calendar
+ * that is the right shape but on the wrong dates, and rebuilding the rotation to fix it loses the
+ * days you corrected by hand. Nudging keeps them.
+ */
+@Composable
+private fun NudgeCard(patternName: String, onNudge: (Long) -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(
+                text = "You're on $patternName",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.size(4.dp))
+            Text(
+                text = "Right shifts, wrong days? Move the whole rotation without rebuilding it. " +
+                    "Days you changed by hand stay where they are.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.size(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { onNudge(-1) }, modifier = Modifier.weight(1f)) {
+                    Text("A day earlier")
+                }
+                OutlinedButton(onClick = { onNudge(1) }, modifier = Modifier.weight(1f)) {
+                    Text("A day later")
+                }
             }
         }
     }
@@ -195,24 +290,23 @@ private fun PresetCard(
 /** A horizontal strip of coloured squares — the fastest way to recognise your own rotation. */
 @Composable
 private fun CyclePreview(cycle: List<String>, shiftTypes: List<ShiftType>) {
-    val byId = shiftTypes.associateBy { it.id }
+    val byId = remember(shiftTypes) { shiftTypes.associateBy { it.id } }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         items(cycle.size) { index ->
             val type = byId[cycle[index]]
+            val fill = type?.let { Color(it.colorArgb.toInt()) } ?: Color.Gray
             Box(
                 modifier = Modifier
                     .size(20.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(
-                        type?.let { Color(it.colorArgb.toInt()) } ?: Color.Gray
-                    ),
+                    .background(fill),
                 contentAlignment = Alignment.Center,
             ) {
                 if (type?.isWorking == true) {
                     Text(
                         text = type.abbreviation,
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = textOn(fill),
                     )
                 }
             }
@@ -228,6 +322,7 @@ private fun CustomCycleBuilder(
     var name by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf(LocalDate.now()) }
     val cycle = remember { mutableListOf<String>().toMutableStateList() }
+    val byId = remember(shiftTypes) { shiftTypes.associateBy { it.id } }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -251,19 +346,25 @@ private fun CustomCycleBuilder(
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(Modifier.size(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(shiftTypes, key = { it.id }) { type ->
+            // A handful of shift types — a scrolling Row costs less than the lazy machinery, while
+            // still not clipping if someone adds enough custom types to overflow the width.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                shiftTypes.forEach { type ->
+                    val fill = Color(type.colorArgb.toInt())
                     Box(
                         modifier = Modifier
                             .size(50.dp)
                             .clip(CircleShape)
-                            .background(Color(type.colorArgb.toInt()))
+                            .background(fill)
                             .clickable { cycle.add(type.id) },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = type.abbreviation.ifEmpty { "–" },
-                            color = if (type.isWorking) Color.White else MaterialTheme.colorScheme.onSurface,
+                            color = textOn(fill),
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -287,19 +388,20 @@ private fun CustomCycleBuilder(
                 // Tap a day in the built cycle to remove it.
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     itemsIndexed(cycle) { index, id ->
-                        val type = shiftTypes.firstOrNull { it.id == id }
+                        val type = byId[id]
+                        val fill = type?.let { Color(it.colorArgb.toInt()) } ?: Color.Gray
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(type?.let { Color(it.colorArgb.toInt()) } ?: Color.Gray)
+                                .background(fill)
                                 .clickable { cycle.removeAt(index) },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = type?.abbreviation.orEmpty(),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                                color = textOn(fill),
                             )
                         }
                     }

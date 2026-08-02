@@ -61,8 +61,15 @@ data class Schedule(
         }
 
     /** Totals for the month summary bar: how many shifts, and how many hours. */
-    fun monthSummary(month: YearMonth): MonthSummary {
-        val days = shiftsInMonth(month)
+    fun monthSummary(month: YearMonth): MonthSummary = summaryOf(shiftsInMonth(month))
+
+    /**
+     * Totals for an already-resolved list of days.
+     *
+     * The calendar resolves the visible month once and then draws it; going back through
+     * [shiftsInMonth] to total it up would resolve every day a second time.
+     */
+    fun summaryOf(days: List<DayShift>): MonthSummary {
         val working = days.filter { it.shift?.isWorking == true }
         val minutes = working.sumOf { it.shift?.durationMinutes ?: 0 }
         return MonthSummary(

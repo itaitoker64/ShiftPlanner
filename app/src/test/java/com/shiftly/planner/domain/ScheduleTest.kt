@@ -198,6 +198,20 @@ class ScheduleTest {
     }
 
     @Test
+    fun `summarising resolved days matches summarising the month`() {
+        // The calendar resolves the month once and totals that list rather than resolving twice.
+        // The two routes must not be able to disagree.
+        val schedule = scheduleWith(Presets.byKey("dupont")!!.cycle)
+            .withOverride(anchor.plusDays(3), ID_OFF)
+        val january = YearMonth.of(2026, 1)
+
+        assertEquals(
+            schedule.monthSummary(january),
+            schedule.summaryOf(schedule.shiftsInMonth(january)),
+        )
+    }
+
+    @Test
     fun `overrides are reflected in the month summary`() {
         val schedule = scheduleWith(Presets.byKey("4on4off_days")!!.cycle)
         val january = YearMonth.of(2026, 1)

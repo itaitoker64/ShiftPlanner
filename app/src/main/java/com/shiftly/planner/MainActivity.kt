@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shiftly.planner.ads.BannerAd
 import com.shiftly.planner.ads.ConsentManager
 import com.shiftly.planner.ui.CalendarScreen
+import com.shiftly.planner.ui.GuideScreen
 import com.shiftly.planner.ui.ScheduleViewModel
 import com.shiftly.planner.ui.SetupScreen
 import com.shiftly.planner.ui.theme.ShiftlyTheme
@@ -34,18 +36,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        ConsentManager.gatherConsentThenInitialise(this) { adsReady = true }
-
         setContent {
             ShiftlyTheme {
+                // Consent lookup reads from disk and can show a dialog. Kicking it off from a
+                // LaunchedEffect rather than onCreate keeps it off the path to the first frame;
+                // nothing on screen depends on ads having resolved.
+                LaunchedEffect(Unit) {
+                    ConsentManager.gatherConsentThenInitialise(this@MainActivity) {
+                        adsReady = true
+                    }
+                }
+
                 ShiftlyApp(viewModel = viewModel, adsReady = adsReady)
             }
         }
     }
 }
 
+/** Which screen is in front. No navigation library for three destinations. */
+private enum class Destination { Calendar, Setup, Guide }
+
 /**
- * Two screens, no navigation library: the calendar, and the rotation setup.
+ * Three screens: the calendar, the rotation setup, and the guide explaining both.
  *
  * Setup is forced open on a fresh install because a calendar with no rotation has nothing to show.
  */
@@ -53,18 +65,36 @@ class MainActivity : ComponentActivity() {
 private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     var editingPattern by remember { mutableStateOf(false) }
+    var showingGuide by remember { mutableStateOf(false) }
 
     val needsSetup = schedule.pattern == null
+    val destination = when {
+        showingGuide -> Destination.Guide
+        needsSetup || editingPattern -> Destination.Setup
+        else -> Destination.Calendar
+    }
 
-    if (needsSetup || editingPattern) {
-        SetupScreen(viewModel = viewModel, onDone = { editingPattern = false })
-    } else {
-        NotificationPermissionRequest()
-        CalendarScreen(
+    // Back closes the guide rather than the app, matching the arrow in its top bar.
+    BackHandler(enabled = showingGuide) { showingGuide = false }
+
+    when (destination) {
+        Destination.Guide -> GuideScreen(onDone = { showingGuide = false })
+
+        Destination.Setup -> SetupScreen(
             viewModel = viewModel,
-            onEditPattern = { editingPattern = true },
-            bannerAd = { BannerAd(adsReady = adsReady) },
+            onDone = { editingPattern = false },
+            onShowGuide = { showingGuide = true },
         )
+
+        Destination.Calendar -> {
+            NotificationPermissionRequest()
+            CalendarScreen(
+                viewModel = viewModel,
+                onEditPattern = { editingPattern = true },
+                onShowGuide = { showingGuide = true },
+                bannerAd = { BannerAd(adsReady = adsReady) },
+            )
+        }
     }
 }
 

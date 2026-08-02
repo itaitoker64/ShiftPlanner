@@ -3,9 +3,11 @@ package com.shiftly.planner.ui
 import android.app.Application
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -49,10 +51,11 @@ class ScreenRenderTest {
     private val anchor = LocalDate.of(2026, 1, 1)
 
     /**
-     * The preset list. Matching on "has a scroll action" is not enough — every preset card holds a
-     * horizontally scrolling cycle preview, so only the vertical axis identifies the list itself.
+     * The vertically scrolling list on whichever screen is under test — the preset picker, or the
+     * guide. Matching on "has a scroll action" is not enough: both screens hold horizontally
+     * scrolling strips too, so only the vertical axis identifies the list itself.
      */
-    private val presetList = SemanticsMatcher.keyIsDefined(
+    private val verticalList = SemanticsMatcher.keyIsDefined(
         SemanticsProperties.VerticalScrollAxisRange
     )
 
@@ -85,7 +88,7 @@ class ScreenRenderTest {
         // The picker is a LazyColumn, so off-screen presets are not composed until scrolled to.
         // Walking the whole list is what proves none of them is unreachable.
         Presets.all.forEach { preset ->
-            compose.onNode(presetList).performScrollToNode(hasText(preset.name))
+            compose.onNode(verticalList).performScrollToNode(hasText(preset.name))
             compose.onNodeWithText(preset.name).assertExists()
         }
     }
@@ -100,7 +103,7 @@ class ScreenRenderTest {
         compose.onNodeWithText(first.name).performClick()
         compose.waitForIdle()
 
-        compose.onNode(presetList).performScrollToNode(hasText("Use this rotation"))
+        compose.onNode(verticalList).performScrollToNode(hasText("Use this rotation"))
         compose.onNodeWithText("Use this rotation").assertExists()
     }
 
@@ -123,6 +126,67 @@ class ScreenRenderTest {
         }
 
         compose.onNodeWithText("Today").assertIsDisplayed()
+    }
+
+    @Test
+    fun `calendar screen offers a way into the guide`() {
+        // Passing "today" rather than letting the cell read the clock keeps the render fixed.
+        compose.setContent {
+            ShiftlyTheme {
+                CalendarScreen(
+                    viewModel = viewModel(),
+                    onEditPattern = {},
+                    today = anchor,
+                )
+            }
+        }
+
+        compose.onNodeWithText("Today").assertIsDisplayed()
+        compose.onNodeWithContentDescription("How this app works").assertExists()
+    }
+
+    @Test
+    fun `setup screen introduces itself before a rotation exists`() {
+        // A fresh view model has no stored pattern, which is the state a new install opens in:
+        // the intro and a link to the guide, and no nudge — there is nothing yet to nudge.
+        compose.setContent {
+            ShiftlyTheme { SetupScreen(viewModel = viewModel(), onDone = {}) }
+        }
+
+        compose.onNodeWithText("How this app works").assertExists()
+        compose.onNodeWithText("A day earlier").assertDoesNotExist()
+        compose.onNodeWithText("A day later").assertDoesNotExist()
+    }
+
+    @Test
+    fun `guide screen composes and explains the calendar`() {
+        compose.setContent { ShiftlyTheme { GuideScreen(onDone = {}) } }
+
+        // Only the top bar is asserted here: the sections live in a LazyColumn, so which of them
+        // happen to be composed depends on the screen height. The next test walks all of them.
+        compose.onNodeWithText("How Shiftly works").assertIsDisplayed()
+    }
+
+    @Test
+    fun `every guide section is reachable by scrolling`() {
+        compose.setContent { ShiftlyTheme { GuideScreen(onDone = {}) } }
+
+        // The guide is a LazyColumn: the later sections are not composed until scrolled to, and an
+        // unreachable section is the same as a missing one.
+        listOf(
+            "Your rotation repeats — that's the whole idea",
+            "Reading the calendar",
+            "The three numbers at the top",
+            "Changing one single day",
+            "Changing your whole rotation",
+            "Everything is off by a day or two",
+            "On your homescreen",
+            "The evening before",
+            "Your schedule stays on your phone",
+        ).forEach { heading ->
+            compose.onNode(verticalList).performScrollToNode(hasText(heading))
+            compose.onNodeWithText(heading).assertExists()
+        }
     }
 
     @Test
