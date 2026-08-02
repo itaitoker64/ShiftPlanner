@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
-import androidx.glance.LocalContext
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.action.actionStartActivity
@@ -47,7 +46,7 @@ class ShiftWidget : GlanceAppWidget() {
         val schedule = ScheduleRepository(context).schedule.first()
         provideContent {
             GlanceTheme {
-                WidgetContent(schedule)
+                WidgetContent(context, schedule)
             }
         }
     }
@@ -57,10 +56,16 @@ class ShiftWidget : GlanceAppWidget() {
  * [today] is a parameter rather than a `LocalDate.now()` call inside the body so that the widget's
  * two states — in today, or counting down to the next shift — can be tested without waiting for the
  * calendar to cooperate.
+ *
+ * [context] is passed in for a related reason: Glance's unit-test harness does not provide
+ * `LocalContext`, so reading it here would make every one of these states untestable.
  */
 @Composable
-internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now()) {
-    val context = LocalContext.current
+internal fun WidgetContent(
+    context: Context,
+    schedule: Schedule,
+    today: LocalDate = LocalDate.now(),
+) {
     val todayShift = schedule.shiftOn(today)
     val working = todayShift?.isWorking == true
 

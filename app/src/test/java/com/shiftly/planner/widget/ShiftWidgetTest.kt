@@ -1,6 +1,7 @@
 package com.shiftly.planner.widget
 
 import android.app.Application
+import android.content.Context
 import androidx.glance.testing.unit.hasText
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import com.shiftly.planner.domain.Presets
@@ -8,6 +9,7 @@ import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftPattern
 import com.shiftly.planner.domain.ShiftType.Companion.ID_NIGHT
 import com.shiftly.planner.domain.ShiftType.Companion.ID_OFF
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -30,6 +32,9 @@ class ShiftWidgetTest {
 
     private val today = LocalDate.of(2026, 6, 15)
 
+    // Glance does not provide LocalContext to its test harness, so the widget takes one.
+    private val context: Context = ApplicationProvider.getApplicationContext<Application>()
+
     /** A 4-on-4-off rotation positioned so that [today] sits at [cycleIndex]. */
     private fun rotationAt(cycleIndex: Int) = Schedule(
         pattern = ShiftPattern(
@@ -42,7 +47,7 @@ class ShiftWidgetTest {
 
     @Test
     fun `shows the shift and its hours when in today`() = runGlanceAppWidgetUnitTest {
-        provideComposable { WidgetContent(rotationAt(cycleIndex = 0), today) }
+        provideComposable { WidgetContent(context, rotationAt(cycleIndex = 0), today) }
 
         onNode(hasText("Today")).assertExists()
         onNode(hasText("Day")).assertExists()
@@ -53,7 +58,7 @@ class ShiftWidgetTest {
     @Test
     fun `counts down to the next shift when off today`() = runGlanceAppWidgetUnitTest {
         // Cycle index 5 is the second of four days off, so the next shift is three days out.
-        provideComposable { WidgetContent(rotationAt(cycleIndex = 5), today) }
+        provideComposable { WidgetContent(context, rotationAt(cycleIndex = 5), today) }
 
         onNode(hasText("Off")).assertExists()
         onNode(hasText("Back in Thu 18 Jun · 3d")).assertExists()
@@ -62,7 +67,7 @@ class ShiftWidgetTest {
     @Test
     fun `says tomorrow rather than counting one day`() = runGlanceAppWidgetUnitTest {
         // Cycle index 7 is the last day off; the rotation starts again tomorrow.
-        provideComposable { WidgetContent(rotationAt(cycleIndex = 7), today) }
+        provideComposable { WidgetContent(context, rotationAt(cycleIndex = 7), today) }
 
         onNode(hasText("Back in tomorrow")).assertExists()
     }
@@ -71,7 +76,7 @@ class ShiftWidgetTest {
     fun `an override is reflected on the widget`() = runGlanceAppWidgetUnitTest {
         // Today is a Day shift in the rotation, swapped to a Night.
         val schedule = rotationAt(cycleIndex = 0).withOverride(today, ID_NIGHT)
-        provideComposable { WidgetContent(schedule, today) }
+        provideComposable { WidgetContent(context, schedule, today) }
 
         onNode(hasText("Night")).assertExists()
         onNode(hasText("19:00 – 07:00")).assertExists()
@@ -79,7 +84,7 @@ class ShiftWidgetTest {
 
     @Test
     fun `prompts when no rotation has been set up`() = runGlanceAppWidgetUnitTest {
-        provideComposable { WidgetContent(Schedule(), today) }
+        provideComposable { WidgetContent(context, Schedule(), today) }
 
         onNode(hasText("No rotation")).assertExists()
     }
@@ -89,7 +94,7 @@ class ShiftWidgetTest {
         val schedule = Schedule(
             pattern = ShiftPattern("test", "All off", listOf(ID_OFF), today.toEpochDay()),
         )
-        provideComposable { WidgetContent(schedule, today) }
+        provideComposable { WidgetContent(context, schedule, today) }
 
         onNode(hasText("Nothing scheduled")).assertExists()
     }
