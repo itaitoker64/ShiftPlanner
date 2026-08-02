@@ -106,10 +106,10 @@ fun SetupScreen(
             )
         },
     ) { padding ->
-        // The header is part of the list rather than a fixed Column stacked above it. Above it, the
-        // header took its height off the top and left the list whatever remained — on a short
-        // screen, close to nothing — and a lazy list with no viewport cannot be scrolled to
-        // anything, so reaching the confirm button became impossible rather than merely awkward.
+        // The bulky part of the header — the nudge card and the links off this screen — scrolls
+        // inside the list. Stacked above it in a fixed Column, as it first was, it took its height
+        // off the top and left the list whatever remained; on a short screen that is close to
+        // nothing, and a lazy list with no viewport cannot be scrolled to anything.
         val header: LazyListScope.() -> Unit = {
             item {
                 if (pattern == null) {
@@ -132,45 +132,52 @@ fun SetupScreen(
                         onClick = onShowCalendarSync,
                     )
                 }
-
-                Spacer(Modifier.size(16.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = !useCustom,
-                        onClick = { useCustom = false },
-                        label = { Text(stringResource(R.string.tab_presets)) },
-                    )
-                    FilterChip(
-                        selected = useCustom,
-                        onClick = { useCustom = true },
-                        label = { Text(stringResource(R.string.tab_custom)) },
-                    )
-                }
-
                 Spacer(Modifier.size(8.dp))
             }
         }
 
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            if (useCustom) {
-                CustomCycleBuilder(
-                    shiftTypes = schedule.shiftTypes,
-                    header = header,
-                    onSave = { name, cycle, start ->
-                        viewModel.applyCustomPattern(name, cycle, start)
-                        onDone()
-                    },
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            // The two chips stay pinned. They switch between the two things this screen does, and
+            // navigation that scrolls out of reach is navigation you cannot find. They are also
+            // short enough that pinning them cannot squeeze the list.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = !useCustom,
+                    onClick = { useCustom = false },
+                    label = { Text(stringResource(R.string.tab_presets)) },
                 )
-            } else {
-                PresetPicker(
-                    shiftTypes = schedule.shiftTypes,
-                    header = header,
-                    onSave = { preset, start, name ->
-                        viewModel.applyPreset(preset, start, name)
-                        onDone()
-                    },
+                FilterChip(
+                    selected = useCustom,
+                    onClick = { useCustom = true },
+                    label = { Text(stringResource(R.string.tab_custom)) },
                 )
+            }
+
+            Spacer(Modifier.size(8.dp))
+
+            Box(Modifier.weight(1f)) {
+                if (useCustom) {
+                    CustomCycleBuilder(
+                        shiftTypes = schedule.shiftTypes,
+                        header = header,
+                        onSave = { name, cycle, start ->
+                            viewModel.applyCustomPattern(name, cycle, start)
+                            onDone()
+                        },
+                    )
+                } else {
+                    PresetPicker(
+                        shiftTypes = schedule.shiftTypes,
+                        header = header,
+                        onSave = { preset, start, name ->
+                            viewModel.applyPreset(preset, start, name)
+                            onDone()
+                        },
+                    )
+                }
             }
         }
     }
