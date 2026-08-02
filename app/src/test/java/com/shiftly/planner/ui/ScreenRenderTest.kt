@@ -1,12 +1,14 @@
 package com.shiftly.planner.ui
 
 import android.app.Application
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -257,7 +259,12 @@ class ScreenRenderTest {
         // Nothing selected: no bar.
         compose.onNodeWithText("Put them back on the rotation").assertDoesNotExist()
 
-        compose.onNodeWithText("15").performTouchInput { longClick() }
+        // Targeted by "can be long-pressed" rather than by the date: the month summary shows
+        // counts that collide with day numbers, and a day number is not a unique piece of text on
+        // this screen. Nothing else on the calendar takes a long press, so this is the day grid.
+        compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick))
+            .onFirst()
+            .performTouchInput { longClick() }
         compose.waitForIdle()
 
         compose.onNodeWithText("Selected: 1").assertExists()
