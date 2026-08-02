@@ -31,7 +31,7 @@ class ScheduleRepository(private val context: Context) {
         prefs[KEY_SCHEDULE]?.let { stored ->
             // A corrupt or forward-version blob must not brick the app; fall back to empty.
             runCatching { json.decodeFromString<Schedule>(stored) }.getOrNull()
-        } ?: Schedule()
+        }?.withBuiltinTypes() ?: Schedule()
     }
 
     suspend fun save(schedule: Schedule) {
@@ -45,6 +45,7 @@ class ScheduleRepository(private val context: Context) {
         context.scheduleDataStore.edit { prefs ->
             val current = prefs[KEY_SCHEDULE]
                 ?.let { runCatching { json.decodeFromString<Schedule>(it) }.getOrNull() }
+                ?.withBuiltinTypes()
                 ?: Schedule()
             prefs[KEY_SCHEDULE] = json.encodeToString(transform(current))
         }

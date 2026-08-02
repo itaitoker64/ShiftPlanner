@@ -1,0 +1,55 @@
+name: Android
+
+# Every push builds an installable debug APK and attaches it to the run, so anyone can get the
+# app onto a phone without installing Android Studio. There is no Play release yet.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Java 21, not 17. Robolectric refuses to build a sandbox for an SDK newer than the running
+      # JVM supports — on 17 it fails with "Android SDK 36 requires Java 21 (have Java 17)" before
+      # a single test runs. The app itself still compiles to 17 bytecode; this is only the JVM
+      # Gradle and the tests run on.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The runner ships an Android SDK, so local.properties is unnecessary; ANDROID_HOME is set.
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug
+
+      # Named per run so it is obvious which commit an installed build came from.
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: shiftly-debug-apk-${{ github.sha }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-${{ github.sha }}
+          path: app/build/reports/tests/

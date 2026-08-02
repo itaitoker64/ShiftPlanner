@@ -47,14 +47,27 @@ ads/        AdMob banner + UMP consent
 ./gradlew :app:assembleDebug
 ```
 
-Unit tests cover the domain only. The UI, widget and reminders have **never been run on a device or
-emulator** — do not describe them as working. Anything outside `domain/` is unverified until someone
-has actually looked at it on a screen.
+Tests run on the JVM in four groups: `domain/` (pure logic), `ui/ScreenRenderTest` (Robolectric
+composes the screens), `widget/ShiftWidgetTest` (Glance's own unit-test harness, since Glance
+composes to RemoteViews rather than to a View tree), and `reminder/ReminderWorkerTest`.
+
+Anything that renders takes the date as a parameter defaulting to `LocalDate.now()` — see
+`WidgetContent`. Calling `now()` inside the body makes the interesting states untestable.
+
+All of this catches crashes and wrong text. It is **not** the same as working: nothing here has been
+run on a device or emulator, and no one has looked at a single pixel of it. Do not describe any of
+it as working.
+
+Robolectric tests run on the stock `Application`, not `ShiftlyApplication` — see the comment at the
+top of `ScreenRenderTest` for why.
 
 ## Environment gotchas
 
 - **Never place this project in a synced folder** (OneDrive, Dropbox, iCloud). Sync clients lock
   files mid-build; Gradle dies with `AccessDeniedException` on `build/intermediates`.
+- **Tests need a Java 21+ JVM.** Robolectric will not build a sandbox for SDK 36 on Java 17 —
+  `Android SDK 36 requires Java 21 (have Java 17)`, thrown before any test runs. The app still
+  targets Java 17 bytecode; this is only the JVM Gradle runs on. CI pins 21 for the same reason.
 - Windows: set `JAVA_HOME` to Android Studio's bundled JDK, e.g.
   `C:\Program Files\Android\Android Studio\jbr`.
 - `local.properties` (SDK path) is gitignored and must be created locally.

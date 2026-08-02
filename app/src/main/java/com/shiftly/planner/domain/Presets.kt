@@ -1,6 +1,7 @@
 package com.shiftly.planner.domain
 
 import com.shiftly.planner.domain.ShiftType.Companion.ID_DAY
+import com.shiftly.planner.domain.ShiftType.Companion.ID_FULL_DAY
 import com.shiftly.planner.domain.ShiftType.Companion.ID_NIGHT
 import com.shiftly.planner.domain.ShiftType.Companion.ID_OFF
 
@@ -10,6 +11,10 @@ import com.shiftly.planner.domain.ShiftType.Companion.ID_OFF
  * These cover the rotations actually worked in healthcare, manufacturing, emergency services and
  * aviation. Anything not listed here is reachable through the custom cycle builder, so this list
  * is a convenience, not a constraint.
+ *
+ * Adding one that uses a shift type the app did not previously have means adding that type to
+ * [ShiftType.defaults] too — [Schedule.withBuiltinTypes] then backfills it for anyone whose stored
+ * schedule predates it.
  */
 data class ShiftPreset(
     val key: String,
@@ -100,6 +105,31 @@ object Presets {
             name = "Week of days, week of nights",
             description = "Five days on, two off, five nights on, two off. 14-day cycle.",
             cycle = runs(ID_DAY to 5, ID_OFF to 2, ID_NIGHT to 5, ID_OFF to 2),
+        ),
+
+        // Fire and ambulance crews work whole 24-hour tours rather than days and nights, so these
+        // are built from ID_FULL_DAY. Without them the app has nothing to offer that audience.
+        ShiftPreset(
+            key = "24_48",
+            name = "24 on, 48 off",
+            description = "A 24-hour tour, then two days off. 3-day cycle.",
+            cycle = runs(ID_FULL_DAY to 1, ID_OFF to 2),
+        ),
+        ShiftPreset(
+            key = "48_96",
+            name = "48 on, 96 off",
+            description = "Two 24-hour tours back to back, then four days off. 6-day cycle.",
+            cycle = runs(ID_FULL_DAY to 2, ID_OFF to 4),
+        ),
+        ShiftPreset(
+            key = "kelly",
+            name = "Kelly",
+            description = "Three 24-hour tours on alternate days, then four days off. 9-day cycle.",
+            cycle = runs(
+                ID_FULL_DAY to 1, ID_OFF to 1,
+                ID_FULL_DAY to 1, ID_OFF to 1,
+                ID_FULL_DAY to 1, ID_OFF to 4,
+            ),
         ),
     )
 

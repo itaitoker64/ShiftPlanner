@@ -54,6 +54,11 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+
+    testOptions {
+        // Robolectric renders the real layouts, so it needs the merged resources and manifest.
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -86,6 +91,18 @@ dependencies {
     implementation(libs.user.messaging.platform)
 
     testImplementation(libs.junit)
+    // Compose on the JVM. The screens have never run on a device, so composing them in a plain
+    // unit test is the only automated check that they render at all.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.androidx.glance.appwidget.testing)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
