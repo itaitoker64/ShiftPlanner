@@ -136,6 +136,26 @@ fun GuideScreen(onDone: () -> Unit) {
             }
 
             item {
+                GuideSection(stringResource(R.string.guide_bulk_title)) {
+                    Paragraph(stringResource(R.string.guide_bulk_1))
+                    Paragraph(stringResource(R.string.guide_bulk_2))
+                }
+            }
+
+            item {
+                GuideSection(stringResource(R.string.guide_swipe_title)) {
+                    Paragraph(stringResource(R.string.guide_swipe_1))
+                }
+            }
+
+            item {
+                GuideSection(stringResource(R.string.guide_split_title)) {
+                    Paragraph(stringResource(R.string.guide_split_1))
+                    Paragraph(stringResource(R.string.guide_split_2))
+                }
+            }
+
+            item {
                 GuideSection(stringResource(R.string.guide_rotation_title)) {
                     Paragraph(
                         stringResource(R.string.guide_rotation_1)

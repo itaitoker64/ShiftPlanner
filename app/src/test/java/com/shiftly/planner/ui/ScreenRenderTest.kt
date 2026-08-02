@@ -10,7 +10,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import com.shiftly.planner.domain.Presets
 import com.shiftly.planner.domain.Schedule
@@ -234,6 +236,35 @@ class ScreenRenderTest {
     }
 
     @Test
+    fun `settings screen composes and offers a language`() {
+        compose.setContent { ShiftlyTheme { SettingsScreen(onDone = {}) } }
+
+        compose.onNodeWithText("Settings").assertIsDisplayed()
+        // Named in their own scripts on purpose: someone stuck in a language they cannot read has
+        // to be able to find their way out.
+        compose.onNodeWithText("English").assertExists()
+        compose.onNodeWithText("עברית").assertExists()
+    }
+
+    @Test
+    fun `holding a day starts a selection the bar can act on`() {
+        compose.setContent {
+            ShiftlyTheme {
+                CalendarScreen(viewModel = viewModel(), onEditPattern = {}, today = anchor)
+            }
+        }
+
+        // Nothing selected: no bar.
+        compose.onNodeWithText("Put them back on the rotation").assertDoesNotExist()
+
+        compose.onNodeWithText("15").performTouchInput { longClick() }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Selected: 1").assertExists()
+        compose.onNodeWithText("Put them back on the rotation").assertExists()
+    }
+
+    @Test
     fun `guide screen composes and explains the calendar`() {
         compose.setContent { ShiftlyTheme { GuideScreen(onDone = {}) } }
 
@@ -253,6 +284,9 @@ class ScreenRenderTest {
             "Reading the calendar",
             "The three numbers at the top",
             "Changing one single day",
+            "Changing a run of days at once",
+            "Moving through the months",
+            "Shifts that are split across the day",
             "Changing your whole rotation",
             "Everything is off by a day or two",
             "On your homescreen",

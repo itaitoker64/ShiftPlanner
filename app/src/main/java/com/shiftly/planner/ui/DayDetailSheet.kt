@@ -45,16 +45,14 @@ private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 // Takes a Context rather than being @Composable: it returns early for non-working shifts, and an
 // early return out of a composable is more trouble than formatting a string is worth.
 private fun ShiftType.timeRangeText(context: Context): String? {
-    val start = startMinute ?: return null
-    val end = endMinute ?: return null
-    val from = LocalTime.of(start / 60, start % 60).format(TIME)
-    val to = LocalTime.of(end / 60, end % 60).format(TIME)
-    val hours = durationMinutes?.div(60)
-    return if (hours == null) {
+    val spans = blocks.takeIf { it.isNotEmpty() } ?: return null
+    val ranges = spans.joinToString(" · ") { block ->
+        val from = LocalTime.of(block.startMinute / 60, block.startMinute % 60).format(TIME)
+        val to = LocalTime.of(block.endMinute / 60, block.endMinute % 60).format(TIME)
         context.getString(R.string.time_range, from, to)
-    } else {
-        context.getString(R.string.time_range_with_hours, from, to, hours)
     }
+    val hours = durationMinutes?.div(60) ?: return ranges
+    return context.getString(R.string.time_range_total, ranges, hours)
 }
 
 /**
@@ -165,7 +163,7 @@ fun DayDetailSheet(
 }
 
 @Composable
-private fun ShiftChoice(type: ShiftType, isSelected: Boolean, onClick: () -> Unit) {
+internal fun ShiftChoice(type: ShiftType, isSelected: Boolean, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(onClick = onClick),

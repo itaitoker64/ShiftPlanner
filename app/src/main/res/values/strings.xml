@@ -122,7 +122,7 @@
     <string name="guide_one_day_2">Only that one day changes. Your rotation is left alone, so the rest of the year does not move. The day gets a red dot to show it was you, not the rotation. Tap it again and press Reset to put it back.</string>
 
     <string name="guide_rotation_title">Changing your whole rotation</string>
-    <string name="guide_rotation_1">The bar at the bottom of the calendar shows the rotation you are on. Tap it, or the pencil in the top bar, to pick a different one or build your own.</string>
+    <string name="guide_rotation_1">The bar at the bottom of the calendar shows the rotation you are on. Tap it, or Settings in the top bar, to pick a different one or build your own.</string>
     <string name="guide_rotation_2">Changing your rotation clears the single days you had changed by hand. Those were corrections to the old rotation and would be wrong against the new one.</string>
 
     <string name="guide_offset_title">Everything is off by a day or two</string>
@@ -234,4 +234,42 @@
     <string name="setup_shift_times_row_help">Set when your shifts start and end</string>
     <string name="setup_calendar_row">Add to your calendar</string>
     <string name="setup_calendar_row_help">Put your shifts in the phone\'s calendar</string>
+
+    <!-- Settings -->
+    <string name="cd_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Same as my phone</string>
+    <string name="settings_your_schedule">Your schedule</string>
+    <string name="settings_rotation_help">Change the pattern you work</string>
+    <string name="settings_guide_help">What everything in the app means</string>
+
+    <!-- Changing several days at once -->
+    <!-- 1: how many days are selected. -->
+    <string name="bulk_selected">Selected: %1$d</string>
+    <string name="bulk_set_to">Set them all to</string>
+    <string name="bulk_reset">Put them back on the rotation</string>
+    <string name="bulk_cancel">Cancel</string>
+    <string name="bulk_hint">Press and hold a day to change several at once</string>
+
+    <!-- Shifts split into blocks -->
+    <!-- 1: how many blocks. 2: total hours across them. -->
+    <string name="shift_hours_split_summary">%1$d blocks · %2$dh</string>
+    <!-- 1: which block, counting from one. -->
+    <string name="shift_block_number">Block %1$d</string>
+    <string name="shift_add_block">Add another block</string>
+    <string name="shift_remove_block">Remove this block</string>
+    <!-- 1: the blocks, already formatted. 2: total hours. -->
+    <string name="time_range_total">%1$s · %2$dh</string>
+
+    <string name="guide_bulk_title">Changing a run of days at once</string>
+    <string name="guide_bulk_1">Press and hold any day. It gets a ring, and tapping other days adds them to the selection. A bar appears at the bottom: pick a shift and every selected day changes together, or put them all back on the rotation.</string>
+    <string name="guide_bulk_2">Useful for a fortnight of leave, or a week you covered for someone. Same as changing days one at a time, just faster.</string>
+
+    <string name="guide_swipe_title">Moving through the months</string>
+    <string name="guide_swipe_1">Drag the calendar sideways to go a month back or forward. The arrows in the top bar do the same, and Today brings you back.</string>
+
+    <string name="guide_split_title">Shifts that are split across the day</string>
+    <string name="guide_split_1">Some rotas are not one stretch a day. Four hours on and eight off, the way watches are stood, means two separate four-hour blocks in the same twenty-four hours.</string>
+    <string name="guide_split_2">In Shift times, open a shift and press Add another block. Set the hours of each. The month totals add every block up, and each one becomes its own entry in your calendar.</string>
 </resources>

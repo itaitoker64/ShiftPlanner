@@ -178,6 +178,13 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
     /** No-op while the type is still on the rotation — see [Schedule.withoutShiftType]. */
     fun deleteShiftType(typeId: String) = mutate { it.withoutShiftType(typeId) }
 
+    /** Sets a whole selection of days to one shift, from the calendar's multi-select. */
+    fun setOverrides(dates: Set<LocalDate>, shiftTypeId: String) =
+        mutate { it.withOverrides(dates, shiftTypeId) }
+
+    /** Puts a whole selection back on the rotation. */
+    fun clearOverrides(dates: Set<LocalDate>) = mutate { it.withoutOverrides(dates) }
+
     fun clearOverride(date: LocalDate) = mutate { it.withoutOverride(date) }
 
     fun clearAllOverrides() = mutate { it.copy(overrides = emptyMap()) }

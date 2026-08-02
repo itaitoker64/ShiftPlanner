@@ -95,56 +95,66 @@ object CalendarSync {
         while (date.isBefore(until)) {
             val shift = schedule.shiftOn(date)
             if (shift != null && shift.isWorking) {
-                val values = ContentValues().apply {
-                    put(CalendarContract.Events.CALENDAR_ID, calendarId)
-                    put(CalendarContract.Events.TITLE, shift.displayName(context))
-                    put(
-                        CalendarContract.Events.DESCRIPTION,
-                        context.getString(R.string.calendar_event_description),
-                    )
-                    put(CalendarContract.Events.HAS_ALARM, 0)
+                val title = shift.displayName(context)
+                val description = context.getString(R.string.calendar_event_description)
+                val blocks = shift.blocks
 
-                    val start = shift.startMinute
-                    val duration = shift.durationMinutes
-                    if (start != null && duration != null) {
-                        // Built by adding minutes to a zoned midnight rather than to an instant, so
-                        // a shift the night the clocks change still starts at the time on the rota.
-                        val startsAt = date.atStartOfDay(zone).plusMinutes(start.toLong())
-                        put(
-                            CalendarContract.Events.DTSTART,
-                            startsAt.toInstant().toEpochMilli(),
-                        )
-                        put(
-                            CalendarContract.Events.DTEND,
-                            startsAt.plusMinutes(duration.toLong()).toInstant().toEpochMilli(),
-                        )
-                        put(CalendarContract.Events.EVENT_TIMEZONE, timeZoneId)
-                    } else {
-                        // A working shift with no hours set: all-day, which the provider requires
-                        // to be midnight UTC rather than midnight local.
-                        val midnightUtc = date.atStartOfDay(ZoneId.of("UTC"))
+                if (blocks.isEmpty()) {
+                    // A working shift with no hours set: all-day, which the provider requires to
+                    // be midnight UTC rather than midnight local.
+                    val midnightUtc = date.atStartOfDay(ZoneId.of("UTC"))
+                    val values = ContentValues().apply {
+                        put(CalendarContract.Events.CALENDAR_ID, calendarId)
+                        put(CalendarContract.Events.TITLE, title)
+                        put(CalendarContract.Events.DESCRIPTION, description)
+                        put(CalendarContract.Events.HAS_ALARM, 0)
                         put(CalendarContract.Events.ALL_DAY, 1)
-                        put(
-                            CalendarContract.Events.DTSTART,
-                            midnightUtc.toInstant().toEpochMilli(),
-                        )
+                        put(CalendarContract.Events.DTSTART, midnightUtc.toInstant().toEpochMilli())
                         put(
                             CalendarContract.Events.DTEND,
                             midnightUtc.plusDays(1).toInstant().toEpochMilli(),
                         )
                         put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
                     }
+                    insert(resolver, values)?.let(written::add)
+                } else {
+                    // One event per block, so a split day — four on, eight off, four on — shows as
+                    // the two separate stretches it actually is rather than one long smear.
+                    blocks.forEach { block ->
+                        val startsAt = date.atStartOfDay(zone).plusMinutes(block.startMinute.toLong())
+                        val values = ContentValues().apply {
+                            put(CalendarContract.Events.CALENDAR_ID, calendarId)
+                            put(CalendarContract.Events.TITLE, title)
+                            put(CalendarContract.Events.DESCRIPTION, description)
+                            put(CalendarContract.Events.HAS_ALARM, 0)
+                            // Built by adding minutes to a zoned midnight rather than to an
+                            // instant, so a block the night the clocks change still starts at the
+                            // time on the rota.
+                            put(CalendarContract.Events.DTSTART, startsAt.toInstant().toEpochMilli())
+                            put(
+                                CalendarContract.Events.DTEND,
+                                startsAt.plusMinutes(block.lengthMinutes.toLong())
+                                    .toInstant()
+                                    .toEpochMilli(),
+                            )
+                            put(CalendarContract.Events.EVENT_TIMEZONE, timeZoneId)
+                        }
+                        insert(resolver, values)?.let(written::add)
+                    }
                 }
-
-                runCatching { resolver.insert(CalendarContract.Events.CONTENT_URI, values) }
-                    .getOrNull()
-                    ?.let { uri -> ContentUris.parseId(uri).let(written::add) }
             }
             date = date.plusDays(1)
         }
 
         return written
     }
+
+    private fun insert(
+        resolver: android.content.ContentResolver,
+        values: ContentValues,
+    ): Long? = runCatching { resolver.insert(CalendarContract.Events.CONTENT_URI, values) }
+        .getOrNull()
+        ?.let(ContentUris::parseId)
 
     /** Deletes every event this app wrote, leaving the rest of the calendar alone. */
     fun removeAll(context: Context, eventIds: Set<Long>) {

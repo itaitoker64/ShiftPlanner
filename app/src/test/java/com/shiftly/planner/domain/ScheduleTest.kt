@@ -385,6 +385,112 @@ class EditableShiftTypeTest {
     }
 }
 
+class SplitShiftTest {
+
+    private val anchor = LocalDate.of(2026, 1, 1)
+
+    /** The maritime watch the split exists for: four hours on, eight off, twice a day. */
+    private val watch = ShiftType(
+        id = "custom_watch",
+        name = "Watch",
+        abbreviation = "W",
+        colorArgb = 0xFF00897B,
+        segments = listOf(
+            ShiftSegment(0, 4 * 60),
+            ShiftSegment(12 * 60, 16 * 60),
+        ),
+    )
+
+    @Test
+    fun `a split day totals every block`() {
+        assertEquals(8 * 60, watch.durationMinutes)
+        assertTrue(watch.isSplit)
+    }
+
+    @Test
+    fun `a block that crosses midnight is measured forwards`() {
+        assertEquals(4 * 60, ShiftSegment(22 * 60, 2 * 60).lengthMinutes)
+    }
+
+    @Test
+    fun `a block that ends when it starts is a whole day`() {
+        assertEquals(24 * 60, ShiftSegment(8 * 60, 8 * 60).lengthMinutes)
+    }
+
+    @Test
+    fun `a plain shift reads as one block`() {
+        assertEquals(1, ShiftType.DAY.blocks.size)
+        assertFalse(ShiftType.DAY.isSplit)
+        assertEquals(7 * 60, ShiftType.DAY.blocks.single().startMinute)
+    }
+
+    @Test
+    fun `a non-working type has no blocks and no duration`() {
+        assertTrue(ShiftType.OFF.blocks.isEmpty())
+        assertNull(ShiftType.OFF.durationMinutes)
+    }
+
+    @Test
+    fun `month totals count the hours of a split day, not the day`() {
+        // A one-day cycle of the watch: every day of January is eight hours across two blocks.
+        val schedule = Schedule(
+            shiftTypes = ShiftType.defaults + watch,
+            pattern = ShiftPattern("test", "Watch", listOf(watch.id), anchor.toEpochDay()),
+        )
+
+        val summary = schedule.monthSummary(YearMonth.of(2026, 1))
+
+        assertEquals(31, summary.workingDays)
+        assertEquals(31 * 8 * 60, summary.totalMinutes)
+    }
+}
+
+class BulkOverrideTest {
+
+    private val anchor = LocalDate.of(2026, 1, 1)
+
+    private fun schedule() = Schedule(
+        pattern = ShiftPattern(
+            "test",
+            "Test",
+            Presets.byKey("4on4off_days")!!.cycle,
+            anchor.toEpochDay(),
+        ),
+    )
+
+    @Test
+    fun `a run of days can be set in one go`() {
+        val week = (0L until 7L).map { anchor.plusDays(it) }
+
+        val edited = schedule().withOverrides(week, ID_NIGHT)
+
+        week.forEach { assertEquals(ID_NIGHT, edited.shiftOn(it)?.id) }
+        // And only those days: the eighth still follows the rotation.
+        assertFalse(edited.isOverridden(anchor.plusDays(7)))
+    }
+
+    @Test
+    fun `a run of days can be put back on the rotation in one go`() {
+        val week = (0L until 7L).map { anchor.plusDays(it) }
+        val edited = schedule().withOverrides(week, ID_NIGHT)
+
+        val reset = edited.withoutOverrides(week)
+
+        assertEquals(schedule().overrides, reset.overrides)
+        assertEquals(ID_DAY, reset.shiftOn(anchor)?.id)
+    }
+
+    @Test
+    fun `clearing a selection leaves days outside it alone`() {
+        val edited = schedule()
+            .withOverrides(listOf(anchor, anchor.plusDays(1)), ID_NIGHT)
+            .withoutOverrides(listOf(anchor))
+
+        assertFalse(edited.isOverridden(anchor))
+        assertTrue(edited.isOverridden(anchor.plusDays(1)))
+    }
+}
+
 class ShiftTypeTest {
 
     @Test

@@ -110,7 +110,7 @@
     <string name="guide_one_day_2">רק היום הזה משתנה. הסבב עצמו לא זז, אז כל שאר השנה נשארת במקום. היום מקבל נקודה אדומה שמסמנת שזה אתם ולא הסבב. הקישו עליו שוב ולחצו \"איפוס\" כדי להחזיר אותו.</string>
 
     <string name="guide_rotation_title">שינוי הסבב כולו</string>
-    <string name="guide_rotation_1">הפס בתחתית היומן מציג את הסבב שאתם עליו. הקישו עליו, או על העיפרון בסרגל העליון, כדי לבחור סבב אחר או לבנות משלכם.</string>
+    <string name="guide_rotation_1">הפס בתחתית היומן מציג את הסבב שאתם עליו. הקישו עליו, או על ההגדרות בסרגל העליון, כדי לבחור סבב אחר או לבנות משלכם.</string>
     <string name="guide_rotation_2">שינוי הסבב מוחק את הימים הבודדים ששיניתם ידנית. הם היו תיקונים לסבב הישן, ומול הסבב החדש הם יהיו שגויים.</string>
 
     <string name="guide_offset_title">הכל מוזז ביום או יומיים</string>
@@ -215,4 +215,38 @@
     <string name="setup_shift_times_row_help">קביעת מתי המשמרות מתחילות ונגמרות</string>
     <string name="setup_calendar_row">הוספה ליומן</string>
     <string name="setup_calendar_row_help">הוספת המשמרות ליומן של הטלפון</string>
+
+    <!-- Settings -->
+    <string name="cd_settings">הגדרות</string>
+    <string name="settings_title">הגדרות</string>
+    <string name="settings_language">שפה</string>
+    <string name="settings_language_system">כמו בטלפון</string>
+    <string name="settings_your_schedule">הלוח שלכם</string>
+    <string name="settings_rotation_help">שינוי התבנית שאתם עובדים</string>
+    <string name="settings_guide_help">מה המשמעות של כל דבר באפליקציה</string>
+
+    <!-- Changing several days at once -->
+    <string name="bulk_selected">נבחרו: %1$d</string>
+    <string name="bulk_set_to">שנו את כולם ל־</string>
+    <string name="bulk_reset">החזרה לסבב</string>
+    <string name="bulk_cancel">ביטול</string>
+    <string name="bulk_hint">לחיצה ארוכה על יום כדי לשנות כמה ימים יחד</string>
+
+    <!-- Shifts split into blocks -->
+    <string name="shift_hours_split_summary">%1$d בלוקים · %2$d ש׳</string>
+    <string name="shift_block_number">בלוק %1$d</string>
+    <string name="shift_add_block">הוספת בלוק נוסף</string>
+    <string name="shift_remove_block">הסרת הבלוק הזה</string>
+    <string name="time_range_total">%1$s · %2$d ש׳</string>
+
+    <string name="guide_bulk_title">שינוי של רצף ימים בבת אחת</string>
+    <string name="guide_bulk_1">לחצו לחיצה ארוכה על יום כלשהו. הוא מקבל מסגרת, והקשה על ימים נוספים מוסיפה אותם לבחירה. בתחתית המסך מופיע פס: בחרו משמרת וכל הימים שנבחרו משתנים יחד, או החזירו את כולם לסבב.</string>
+    <string name="guide_bulk_2">נוח לשבועיים חופשה, או לשבוע שהחלפתם בו מישהו. אותו דבר כמו שינוי יום־יום, רק מהר יותר.</string>
+
+    <string name="guide_swipe_title">מעבר בין החודשים</string>
+    <string name="guide_swipe_1">גררו את היומן הצידה כדי לעבור חודש אחורה או קדימה. החיצים בסרגל העליון עושים את אותו הדבר, וכפתור \"היום\" מחזיר אתכם.</string>
+
+    <string name="guide_split_title">משמרות מפוצלות בתוך היום</string>
+    <string name="guide_split_1">יש סבבים שהם לא רצף אחד ביום. ארבע שעות עבודה ושמונה מנוחה, כמו במשמרות ימאות, זה שני בלוקים נפרדים של ארבע שעות באותן עשרים וארבע שעות.</string>
+    <string name="guide_split_2">במסך \"שעות המשמרות\", פתחו משמרת ולחצו \"הוספת בלוק נוסף\". קבעו את השעות של כל אחד. הסיכומים החודשיים מחברים את כל הבלוקים, וכל בלוק הופך לאירוע נפרד ביומן שלכם.</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.shiftly.planner
 
 import android.Manifest
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -24,8 +25,10 @@ import com.shiftly.planner.ui.CalendarSyncScreen
 import com.shiftly.planner.ui.GuideScreen
 import com.shiftly.planner.ui.OnboardingScreen
 import com.shiftly.planner.ui.ScheduleViewModel
+import com.shiftly.planner.ui.SettingsScreen
 import com.shiftly.planner.ui.SetupScreen
 import com.shiftly.planner.ui.ShiftTypesScreen
+import com.shiftly.planner.text.AppLanguage
 import com.shiftly.planner.ui.theme.ShiftlyTheme
 
 class MainActivity : ComponentActivity() {
@@ -34,6 +37,17 @@ class MainActivity : ComponentActivity() {
 
     /** Flipped once consent is resolved and the Mobile Ads SDK is initialised. */
     private var adsReady by mutableStateOf(false)
+
+    /**
+     * Applies the in-app language before anything is inflated.
+     *
+     * This is a ComponentActivity rather than an AppCompatActivity, so appcompat's pre-33 backport
+     * has nothing of ours to recreate on its own; wrapping the base context here is what makes the
+     * choice take effect on every version.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.applyTo(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +71,9 @@ class MainActivity : ComponentActivity() {
 }
 
 /** Which screen is in front. Still no navigation library, but the list is growing. */
-private enum class Destination { Calendar, Setup, Guide, Onboarding, ShiftTimes, CalendarSync }
+private enum class Destination {
+    Calendar, Setup, Guide, Onboarding, ShiftTimes, CalendarSync, Settings
+}
 
 /**
  * The calendar, the rotation setup, the guide, the shift-times editor, calendar sync, and the
@@ -75,6 +91,7 @@ private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
     var showingGuide by remember { mutableStateOf(false) }
     var showingShiftTimes by remember { mutableStateOf(false) }
     var showingCalendarSync by remember { mutableStateOf(false) }
+    var showingSettings by remember { mutableStateOf(false) }
 
     val needsSetup = schedule.pattern == null
     val destination = when {
@@ -82,6 +99,9 @@ private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
         showingGuide -> Destination.Guide
         showingShiftTimes -> Destination.ShiftTimes
         showingCalendarSync -> Destination.CalendarSync
+        // Ahead of setup on purpose: without a rotation the calendar never shows, and someone who
+        // cannot read the language they are stuck in would have no way to reach the picker.
+        showingSettings -> Destination.Settings
         needsSetup || editingPattern -> Destination.Setup
         else -> Destination.Calendar
     }
@@ -90,6 +110,7 @@ private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
     BackHandler(enabled = showingGuide) { showingGuide = false }
     BackHandler(enabled = showingShiftTimes) { showingShiftTimes = false }
     BackHandler(enabled = showingCalendarSync) { showingCalendarSync = false }
+    BackHandler(enabled = showingSettings) { showingSettings = false }
 
     when (destination) {
         Destination.Onboarding -> OnboardingScreen(
@@ -109,12 +130,24 @@ private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
             onDone = { showingCalendarSync = false },
         )
 
+        Destination.Settings -> SettingsScreen(
+            onDone = { showingSettings = false },
+            onShowRotation = {
+                showingSettings = false
+                editingPattern = true
+            },
+            onShowShiftTimes = { showingShiftTimes = true },
+            onShowCalendarSync = { showingCalendarSync = true },
+            onShowGuide = { showingGuide = true },
+        )
+
         Destination.Setup -> SetupScreen(
             viewModel = viewModel,
             onDone = { editingPattern = false },
             onShowGuide = { showingGuide = true },
             onShowShiftTimes = { showingShiftTimes = true },
             onShowCalendarSync = { showingCalendarSync = true },
+            onShowSettings = { showingSettings = true },
         )
 
         Destination.Calendar -> {
@@ -123,6 +156,7 @@ private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
                 viewModel = viewModel,
                 onEditPattern = { editingPattern = true },
                 onShowGuide = { showingGuide = true },
+                onShowSettings = { showingSettings = true },
                 bannerAd = { BannerAd(adsReady = adsReady) },
             )
         }

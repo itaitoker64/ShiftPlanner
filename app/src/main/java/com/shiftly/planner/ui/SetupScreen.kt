@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -79,6 +80,7 @@ fun SetupScreen(
     onShowGuide: () -> Unit = {},
     onShowShiftTimes: () -> Unit = {},
     onShowCalendarSync: () -> Unit = {},
+    onShowSettings: () -> Unit = {},
 ) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     var useCustom by remember { mutableStateOf(false) }
@@ -101,6 +103,9 @@ fun SetupScreen(
                             Icons.AutoMirrored.Outlined.HelpOutline,
                             stringResource(R.string.cd_guide),
                         )
+                    }
+                    IconButton(onClick = onShowSettings) {
+                        Icon(Icons.Default.Settings, stringResource(R.string.cd_settings))
                     }
                 },
             )

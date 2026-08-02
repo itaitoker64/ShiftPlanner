@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shiftly.planner.R
 import com.shiftly.planner.domain.Schedule
+import com.shiftly.planner.domain.ShiftSegment
 import com.shiftly.planner.domain.ShiftType
 import com.shiftly.planner.text.displayAbbreviation
 import com.shiftly.planner.text.displayName
@@ -198,16 +201,24 @@ internal fun ShiftTypeRow(type: ShiftType, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                 )
-                val start = type.startMinute
-                val end = type.endMinute
+                val blocks = type.blocks
                 Text(
-                    text = if (!type.isWorking || start == null || end == null) {
-                        stringResource(R.string.shift_not_worked)
-                    } else {
-                        stringResource(
+                    text = when {
+                        !type.isWorking || blocks.isEmpty() ->
+                            stringResource(R.string.shift_not_worked)
+
+                        blocks.size == 1 -> stringResource(
                             R.string.shift_hours_summary,
-                            minuteOfDayText(start),
-                            minuteOfDayText(end),
+                            minuteOfDayText(blocks.single().startMinute),
+                            minuteOfDayText(blocks.single().endMinute),
+                            (type.durationMinutes ?: 0) / 60,
+                        )
+
+                        // A split day: say how many blocks rather than listing them all in a row
+                        // that has no space for them.
+                        else -> stringResource(
+                            R.string.shift_hours_split_summary,
+                            blocks.size,
                             (type.durationMinutes ?: 0) / 60,
                         )
                     },
@@ -235,10 +246,14 @@ internal fun ShiftTypeEditor(
     var name by remember(type.id) { mutableStateOf(type.displayName(context)) }
     var abbreviation by remember(type.id) { mutableStateOf(type.displayAbbreviation(context)) }
     var isWorking by remember(type.id) { mutableStateOf(type.isWorking) }
-    var start by remember(type.id) { mutableStateOf(type.startMinute ?: DEFAULT_START_MINUTE) }
-    var end by remember(type.id) { mutableStateOf(type.endMinute ?: DEFAULT_END_MINUTE) }
     var colorArgb by remember(type.id) { mutableStateOf(type.colorArgb) }
     var picking by remember(type.id) { mutableStateOf<TimeField?>(null) }
+    // One entry for a plain shift, several for a watch pattern like four on and eight off.
+    val blocks = remember(type.id) {
+        type.blocks
+            .ifEmpty { listOf(ShiftSegment(DEFAULT_START_MINUTE, DEFAULT_END_MINUTE)) }
+            .toMutableStateList()
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -287,33 +302,71 @@ internal fun ShiftTypeEditor(
 
             if (isWorking) {
                 Spacer(Modifier.size(14.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = { picking = TimeField.Start },
-                        modifier = Modifier.weight(1f),
-                    ) {
+
+                blocks.forEachIndexed { index, block ->
+                    if (blocks.size > 1) {
                         Text(
-                            stringResource(R.string.shift_starts_at, minuteOfDayText(start))
+                            text = stringResource(R.string.shift_block_number, index + 1),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Spacer(Modifier.size(4.dp))
                     }
-                    OutlinedButton(
-                        onClick = { picking = TimeField.End },
-                        modifier = Modifier.weight(1f),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.shift_ends_at, minuteOfDayText(end)))
+                        OutlinedButton(
+                            onClick = { picking = TimeField(index, isStart = true) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                stringResource(
+                                    R.string.shift_starts_at,
+                                    minuteOfDayText(block.startMinute),
+                                )
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { picking = TimeField(index, isStart = false) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                stringResource(
+                                    R.string.shift_ends_at,
+                                    minuteOfDayText(block.endMinute),
+                                )
+                            )
+                        }
+                        // The last block cannot be removed; a working shift with no hours at all
+                        // would count as zero everywhere and read as a bug.
+                        if (blocks.size > 1) {
+                            IconButton(onClick = { blocks.removeAt(index) }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    stringResource(R.string.shift_remove_block),
+                                )
+                            }
+                        }
                     }
+                    Spacer(Modifier.size(6.dp))
                 }
-                Spacer(Modifier.size(6.dp))
+
+                TextButton(
+                    onClick = {
+                        blocks.add(ShiftSegment(DEFAULT_START_MINUTE, DEFAULT_END_MINUTE))
+                    },
+                ) { Text(stringResource(R.string.shift_add_block)) }
+
+                Spacer(Modifier.size(4.dp))
                 Text(
-                    // Read back from the same arithmetic the calendar totals use, so a shift over
-                    // midnight is visibly twelve hours rather than minus twelve.
+                    // Read back from the same arithmetic the calendar totals use, so a block over
+                    // midnight is visibly four hours rather than minus twenty.
                     text = stringResource(
                         R.string.shift_lasts,
-                        lengthMinutes(start, end) / 60,
-                        lengthMinutes(start, end) % 60,
+                        blocks.sumOf { it.lengthMinutes } / 60,
+                        blocks.sumOf { it.lengthMinutes } % 60,
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -362,8 +415,16 @@ internal fun ShiftTypeEditor(
                             isWorking = isWorking,
                             // Clearing the times on a non-working shift is what makes it read as
                             // "off" everywhere else: durationMinutes goes null and stops counting.
-                            startMinute = if (isWorking) start else null,
-                            endMinute = if (isWorking) end else null,
+                            // One block stays in the plain pair of fields so an ordinary shift
+                            // never grows a list it does not need; several move to segments.
+                            startMinute = blocks.firstOrNull()
+                                ?.startMinute
+                                ?.takeIf { isWorking && blocks.size == 1 },
+                            endMinute = blocks.firstOrNull()
+                                ?.endMinute
+                                ?.takeIf { isWorking && blocks.size == 1 },
+                            segments = if (isWorking && blocks.size > 1) blocks.toList()
+                            else emptyList(),
                         )
                     )
                 },
@@ -379,22 +440,24 @@ internal fun ShiftTypeEditor(
     }
 
     picking?.let { field ->
+        val block = blocks.getOrNull(field.index) ?: return@let
         ShiftTimePickerDialog(
-            initialMinute = if (field == TimeField.Start) start else end,
+            initialMinute = if (field.isStart) block.startMinute else block.endMinute,
             onDismiss = { picking = null },
             onConfirm = { minute ->
-                if (field == TimeField.Start) start = minute else end = minute
+                blocks[field.index] = if (field.isStart) {
+                    block.copy(startMinute = minute)
+                } else {
+                    block.copy(endMinute = minute)
+                }
                 picking = null
             },
         )
     }
 }
 
-private enum class TimeField { Start, End }
-
-/** Same wrap-around rule as [ShiftType.durationMinutes], for the live readout while editing. */
-private fun lengthMinutes(start: Int, end: Int): Int =
-    if (end > start) end - start else end + ShiftType.MINUTES_PER_DAY - start
+/** Which end of which block the time picker is currently editing. */
+private data class TimeField(val index: Int, val isStart: Boolean)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

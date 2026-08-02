@@ -80,6 +80,14 @@ data class Schedule(
     fun withOverride(date: LocalDate, shiftTypeId: String): Schedule =
         copy(overrides = overrides + (date.toEpochDay() to shiftTypeId))
 
+    /** Sets every date in [dates] at once, for changing a run of days in one go. */
+    fun withOverrides(dates: Collection<LocalDate>, shiftTypeId: String): Schedule =
+        copy(overrides = overrides + dates.associate { it.toEpochDay() to shiftTypeId })
+
+    /** Puts every date in [dates] back on the rotation. */
+    fun withoutOverrides(dates: Collection<LocalDate>): Schedule =
+        copy(overrides = overrides - dates.map { it.toEpochDay() }.toSet())
+
     fun withoutOverride(date: LocalDate): Schedule =
         copy(overrides = overrides - date.toEpochDay())
 

@@ -99,17 +99,20 @@ internal fun WidgetContent(
 
         if (working) {
             // Already in today — the useful second line is the hours, not the next shift.
-            todayShift?.let { shift ->
-                val start = shift.startMinute
-                val end = shift.endMinute
-                if (start != null && end != null) {
-                    Text(
-                        text = "%02d:%02d – %02d:%02d".format(
-                            start / 60, start % 60, end / 60, end % 60,
-                        ),
-                        style = TextStyle(color = white, fontSize = 13.sp),
-                    )
-                }
+            todayShift?.blocks?.takeIf { it.isNotEmpty() }?.let { blocks ->
+                Text(
+                    // Joined rather than only the first: on a split day the second stretch is
+                    // exactly the one you would otherwise forget.
+                    text = blocks.joinToString(" · ") { block ->
+                        "%02d:%02d – %02d:%02d".format(
+                            block.startMinute / 60,
+                            block.startMinute % 60,
+                            block.endMinute / 60,
+                            block.endMinute % 60,
+                        )
+                    },
+                    style = TextStyle(color = white, fontSize = 13.sp),
+                )
             }
         } else {
             val next = schedule.nextWorkingDay(today.plusDays(1))
