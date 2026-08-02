@@ -1,7 +1,12 @@
 package com.shiftly.planner.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +17,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,15 +37,31 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shiftly.planner.R
 import com.shiftly.planner.domain.DayShift
+import com.shiftly.planner.domain.MonthSummary
 import com.shiftly.planner.domain.Schedule
+import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.displayAbbreviation
+import com.shiftly.planner.text.displayName
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -45,19 +69,46 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
+import kotlin.math.abs
 
 private val MONTH_TITLE: DateTimeFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+
+/**
+ * Readable text for an arbitrary cell colour.
+ *
+ * Shift colours are user-editable, so "white on working days" only holds for the built-ins. Picking
+ * from the colour's own brightness keeps a pale custom colour legible instead of white-on-white.
+ */
+internal fun textOn(background: Color): Color =
+    if (background.luminance() > 0.5f) Color(0xFF10151B) else Color.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     viewModel: ScheduleViewModel,
     onEditPattern: () -> Unit,
+    onShowGuide: () -> Unit = {},
+    onShowSettings: () -> Unit = {},
+    /** Taken as a parameter so a test can render a month around a fixed "today". */
+    today: LocalDate = LocalDate.now(),
     bannerAd: @Composable () -> Unit = {},
 ) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     val month by viewModel.visibleMonth.collectAsStateWithLifecycle()
     val selected by viewModel.selectedDate.collectAsStateWithLifecycle()
+
+    // Empty means normal tapping. Once a long press has put something in here, tapping toggles
+    // days instead of opening one, which is the only way a run of days can be changed at once.
+    var picked by remember { mutableStateOf(emptySet<LocalDate>()) }
+
+    // Resolving a month walks every day through the pattern and the override map. Doing it once per
+    // (schedule, month) rather than once per cell per recomposition is what keeps swiping months
+    // and opening the day sheet from re-deriving the whole grid.
+    val days = remember(schedule, month) { schedule.shiftsInMonth(month) }
+    val summary = remember(schedule, days) { schedule.summaryOf(days) }
+    val legend = remember(days) {
+        days.mapNotNull { it.shift }.distinctBy { it.id }
+    }
 
     Scaffold(
         topBar = {
@@ -70,43 +121,105 @@ fun CalendarScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.showMonth(month.minusMonths(1)) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous month")
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            stringResource(R.string.cd_previous_month),
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.showMonth(month.plusMonths(1)) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next month")
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            stringResource(R.string.cd_next_month),
+                        )
                     }
-                    TextButton(onClick = viewModel::showToday) { Text("Today") }
-                    IconButton(onClick = onEditPattern) {
-                        Icon(Icons.Default.Edit, "Edit rotation")
+                    TextButton(onClick = viewModel::showToday) {
+                        Text(stringResource(R.string.action_today))
+                    }
+                    IconButton(onClick = onShowGuide) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.HelpOutline,
+                            stringResource(R.string.cd_guide),
+                        )
+                    }
+                    IconButton(onClick = onShowSettings) {
+                        Icon(Icons.Default.Settings, stringResource(R.string.cd_settings))
                     }
                 },
             )
         },
-        bottomBar = { bannerAd() },
+        bottomBar = {
+            Column {
+                if (picked.isNotEmpty()) {
+                    BulkEditBar(
+                        count = picked.size,
+                        shiftTypes = schedule.shiftTypes,
+                        onPick = { typeId ->
+                            viewModel.setOverrides(picked, typeId)
+                            picked = emptySet()
+                        },
+                        onResetToRotation = {
+                            viewModel.clearOverrides(picked)
+                            picked = emptySet()
+                        },
+                        onCancel = { picked = emptySet() },
+                    )
+                }
+                bannerAd()
+            }
+        },
     ) { padding ->
+        // Scrollable because the tall months (six grid rows) plus the summary, legend and footer
+        // can outgrow a short screen. On a normal phone nothing scrolls; on a small one the
+        // rotation footer stays reachable instead of being clipped off the bottom.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 8.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp),
         ) {
-            MonthSummaryBar(schedule, month)
-            Spacer(Modifier.size(8.dp))
+            if (schedule.pattern != null) {
+                MonthSummaryBar(summary)
+                Spacer(Modifier.size(12.dp))
+            }
             WeekdayHeader()
+            Spacer(Modifier.size(4.dp))
             MonthGrid(
-                schedule = schedule,
+                days = days,
                 month = month,
+                today = today,
                 selected = selected,
-                onSelect = viewModel::selectDate,
+                picked = picked,
+                onSelect = { date ->
+                    if (picked.isEmpty()) {
+                        viewModel.selectDate(date)
+                    } else {
+                        picked = if (date in picked) picked - date else picked + date
+                    }
+                },
+                onLongSelect = { date -> picked = picked + date },
+                onPreviousMonth = { viewModel.showMonth(month.minusMonths(1)) },
+                onNextMonth = { viewModel.showMonth(month.plusMonths(1)) },
             )
+            if (legend.isNotEmpty()) {
+                Spacer(Modifier.size(12.dp))
+                Legend(legend)
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    // A long press is invisible unless something says so.
+                    text = stringResource(R.string.bulk_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(Modifier.size(8.dp))
             PatternFooter(schedule, onEditPattern)
         }
     }
 
-    selected?.let { date ->
+    selected?.takeIf { picked.isEmpty() }?.let { date ->
         DayDetailSheet(
             date = date,
             schedule = schedule,
@@ -118,33 +231,64 @@ fun CalendarScreen(
 }
 
 @Composable
-private fun MonthSummaryBar(schedule: Schedule, month: YearMonth) {
-    if (schedule.pattern == null) return
-    val summary = schedule.monthSummary(month)
+private fun MonthSummaryBar(summary: MonthSummary) {
+    // Formatted here rather than through MonthSummary.totalHoursText: the domain has no way to
+    // reach a string resource, so "8h 30m" would stay English on a Hebrew phone.
+    val hours = summary.totalMinutes / 60
+    val minutes = summary.totalMinutes % 60
+    val hoursText = if (minutes == 0) {
+        stringResource(R.string.hours_only, hours)
+    } else {
+        stringResource(R.string.hours_and_minutes, hours, minutes)
+    }
 
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(12.dp),
+    Row(
         modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            SummaryStat("${summary.workingDays}", "shifts")
-            SummaryStat("${summary.offDays}", "days off")
-            SummaryStat(summary.totalHoursText, "hours")
-        }
+        SummaryStat(
+            value = "${summary.workingDays}",
+            label = stringResource(R.string.summary_shifts),
+            modifier = Modifier.weight(1f),
+        )
+        SummaryStat(
+            value = "${summary.offDays}",
+            label = stringResource(R.string.summary_days_off),
+            modifier = Modifier.weight(1f),
+        )
+        SummaryStat(
+            value = hoursText,
+            label = stringResource(R.string.summary_hours),
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
 @Composable
-private fun SummaryStat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelSmall)
+private fun SummaryStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -156,13 +300,19 @@ private fun weekdayOrder(): List<DayOfWeek> {
 
 @Composable
 private fun WeekdayHeader() {
+    val order = remember { weekdayOrder() }
+    val labels = remember(order) {
+        order.map { it.getDisplayName(TextStyle.NARROW, Locale.getDefault()) }
+    }
     Row(Modifier.fillMaxWidth()) {
-        weekdayOrder().forEach { day ->
+        labels.forEach { label ->
             Text(
-                text = day.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
-                style = MaterialTheme.typography.labelSmall,
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -170,33 +320,61 @@ private fun WeekdayHeader() {
 
 @Composable
 private fun MonthGrid(
-    schedule: Schedule,
+    days: List<DayShift>,
     month: YearMonth,
+    today: LocalDate,
     selected: LocalDate?,
+    picked: Set<LocalDate>,
     onSelect: (LocalDate) -> Unit,
+    onLongSelect: (LocalDate) -> Unit,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
 ) {
-    val order = weekdayOrder()
-    val firstOfMonth = month.atDay(1)
+    val order = remember { weekdayOrder() }
     // How many blank cells before day 1, given the locale's week start.
-    val leadingBlanks = order.indexOf(firstOfMonth.dayOfWeek)
-    val cells = leadingBlanks + month.lengthOfMonth()
-    val rows = (cells + 6) / 7
-    val today = LocalDate.now()
+    val leadingBlanks = remember(order, month) { order.indexOf(month.atDay(1).dayOfWeek) }
+    val rows = remember(leadingBlanks, month) { (leadingBlanks + month.lengthOfMonth() + 6) / 7 }
+    val layoutDirection = LocalLayoutDirection.current
 
-    Column(Modifier.fillMaxWidth()) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            // Dragging the grid sideways moves a month, which is how every calendar on a phone
+            // behaves. Mirrored under a right-to-left layout, where "forward" is the other way.
+            .pointerInput(month, layoutDirection) {
+                var travelled = 0f
+                val threshold = 56.dp.toPx()
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        if (abs(travelled) >= threshold) {
+                            val forwards = if (layoutDirection == LayoutDirection.Rtl) {
+                                travelled > 0
+                            } else {
+                                travelled < 0
+                            }
+                            if (forwards) onNextMonth() else onPreviousMonth()
+                        }
+                        travelled = 0f
+                    },
+                    onDragCancel = { travelled = 0f },
+                    onHorizontalDrag = { _, delta -> travelled += delta },
+                )
+            }
+    ) {
         repeat(rows) { row ->
             Row(Modifier.fillMaxWidth()) {
                 repeat(7) { column ->
-                    val index = row * 7 + column
-                    val dayOfMonth = index - leadingBlanks + 1
+                    val index = row * 7 + column - leadingBlanks
                     Box(Modifier.weight(1f)) {
-                        if (dayOfMonth in 1..month.lengthOfMonth()) {
-                            val date = month.atDay(dayOfMonth)
+                        val day = days.getOrNull(index)
+                        if (day != null) {
                             DayCell(
-                                day = DayShift(date, schedule.shiftOn(date), schedule.isOverridden(date)),
-                                isToday = date == today,
-                                isSelected = date == selected,
-                                onClick = { onSelect(date) },
+                                day = day,
+                                isToday = day.date == today,
+                                isSelected = day.date == selected,
+                                isPicked = day.date in picked,
+                                onClick = { onSelect(day.date) },
+                                onLongClick = { onLongSelect(day.date) },
                             )
                         } else {
                             Spacer(Modifier.aspectRatio(1f))
@@ -208,27 +386,121 @@ private fun MonthGrid(
     }
 }
 
+/**
+ * What to do with the days a long press has gathered up.
+ *
+ * Sits in the bottom bar rather than a dialog so the calendar stays visible: the whole point is
+ * seeing which days are about to change while choosing what to change them to.
+ */
 @Composable
-private fun DayCell(
+private fun BulkEditBar(
+    count: Int,
+    shiftTypes: List<ShiftType>,
+    onPick: (String) -> Unit,
+    onResetToRotation: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.bulk_selected, count),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                TextButton(onClick = onCancel) { Text(stringResource(R.string.bulk_cancel)) }
+            }
+
+            Text(
+                text = stringResource(R.string.bulk_set_to),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.size(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                shiftTypes.forEach { type ->
+                    ShiftChoice(
+                        type = type,
+                        isSelected = false,
+                        onClick = { onPick(type.id) },
+                    )
+                }
+            }
+
+            TextButton(onClick = onResetToRotation, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.bulk_reset))
+            }
+        }
+    }
+}
+
+/**
+ * One square in the grid.
+ *
+ * Internal rather than private so the guide can show the real thing in its legend — a hand-drawn
+ * copy would drift out of step with the calendar the first time either changes.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun DayCell(
     day: DayShift,
     isToday: Boolean,
     isSelected: Boolean,
-    onClick: () -> Unit,
+    isPicked: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
     val shift = day.shift
-    val fill = shift?.let { Color(it.colorArgb.toInt()) } ?: Color.Transparent
     val working = shift?.isWorking == true
+    val base = shift?.let { Color(it.colorArgb.toInt()) } ?: Color.Transparent
+    val fill = if (working) base else base.copy(alpha = 0.45f)
+
+    val surface = MaterialTheme.colorScheme.surface
+    val content = if (shift == null) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        textOn(fill.compositeOver(surface))
+    }
+
+    // Today is a ring; the selected day is a thicker one. Painting a second translucent background
+    // over the fill — the previous approach — muddied the shift colour rather than framing it.
+    val ring = when {
+        isPicked -> MaterialTheme.colorScheme.primary
+        isSelected -> MaterialTheme.colorScheme.onSurface
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> Color.Transparent
+    }
+    val ringWidth = when {
+        isPicked -> 3.5.dp
+        isSelected -> 2.5.dp
+        else -> 2.dp
+    }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .aspectRatio(1f)
             .padding(2.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (working) fill else fill.copy(alpha = 0.35f))
-            .clickable(onClick = onClick)
+            .clip(RoundedCornerShape(12.dp))
+            .background(fill)
+            .border(ringWidth, ring, RoundedCornerShape(12.dp))
             .then(
-                if (isSelected) {
-                    Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                if (onClick != null) {
+                    Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
                 } else {
                     Modifier
                 }
@@ -239,14 +511,18 @@ private fun DayCell(
             Text(
                 text = "${day.date.dayOfMonth}",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Normal,
-                color = if (working) Color.White else MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Medium,
+                color = content,
             )
-            if (shift != null && shift.abbreviation.isNotEmpty()) {
+            // The non-composable overload: a safe call on a @Composable one would be a conditional
+            // composable invocation, which is more machinery than reading a string deserves.
+            val abbreviation = shift?.displayAbbreviation(LocalContext.current).orEmpty()
+            if (abbreviation.isNotEmpty()) {
                 Text(
-                    text = shift.abbreviation,
+                    text = abbreviation,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (working) Color.White else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    color = content.copy(alpha = 0.85f),
                 )
             }
         }
@@ -256,24 +532,39 @@ private fun DayCell(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(3.dp)
-                    .size(5.dp)
+                    .padding(4.dp)
+                    .size(6.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.error),
             )
         }
+    }
+}
 
-        if (isToday) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 3.dp)
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (working) Color.White else MaterialTheme.colorScheme.primary
-                    ),
-            )
+/** Which colour means which shift, for the shifts actually on screen this month. */
+@Composable
+private fun Legend(types: List<ShiftType>) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        types.forEach { type ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(Color(type.colorArgb.toInt())),
+                )
+                Spacer(Modifier.size(5.dp))
+                Text(
+                    text = type.displayName(context),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -281,23 +572,35 @@ private fun DayCell(
 @Composable
 private fun PatternFooter(schedule: Schedule, onEditPattern: () -> Unit) {
     val pattern = schedule.pattern
-    Row(
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(14.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onEditPattern)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .clickable(onClick = onEditPattern),
     ) {
-        Text(
-            text = pattern?.let { "${it.name} · ${it.cycleLength}-day cycle" }
-                ?: "No rotation set up yet",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Text(
-            text = if (pattern == null) "Set up" else "Change",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = pattern
+                    ?.let { stringResource(R.string.rotation_summary, it.name, it.cycleLength) }
+                    ?: stringResource(R.string.rotation_none),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(
+                    if (pattern == null) R.string.action_set_up else R.string.action_change
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }

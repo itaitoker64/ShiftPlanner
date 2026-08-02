@@ -24,8 +24,10 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.shiftly.planner.MainActivity
+import com.shiftly.planner.R
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.Schedule
+import com.shiftly.planner.text.displayName
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -44,7 +46,7 @@ class ShiftWidget : GlanceAppWidget() {
         val schedule = ScheduleRepository(context).schedule.first()
         provideContent {
             GlanceTheme {
-                WidgetContent(schedule)
+                WidgetContent(context, schedule)
             }
         }
     }
@@ -54,9 +56,16 @@ class ShiftWidget : GlanceAppWidget() {
  * [today] is a parameter rather than a `LocalDate.now()` call inside the body so that the widget's
  * two states — in today, or counting down to the next shift — can be tested without waiting for the
  * calendar to cooperate.
+ *
+ * [context] is passed in for a related reason: Glance's unit-test harness does not provide
+ * `LocalContext`, so reading it here would make every one of these states untestable.
  */
 @Composable
-internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now()) {
+internal fun WidgetContent(
+    context: Context,
+    schedule: Schedule,
+    today: LocalDate = LocalDate.now(),
+) {
     val todayShift = schedule.shiftOn(today)
     val working = todayShift?.isWorking == true
 
@@ -78,39 +87,48 @@ internal fun WidgetContent(schedule: Schedule, today: LocalDate = LocalDate.now(
         val white = ColorProvider(Color.White)
 
         Text(
-            text = "Today",
+            text = context.getString(R.string.widget_today),
             style = TextStyle(color = white, fontSize = 12.sp),
         )
 
         Text(
-            text = todayShift?.name ?: "No rotation",
+            text = todayShift?.displayName(context)
+                ?: context.getString(R.string.widget_no_rotation),
             style = TextStyle(color = white, fontSize = 20.sp, fontWeight = FontWeight.Bold),
         )
 
         if (working) {
             // Already in today — the useful second line is the hours, not the next shift.
-            todayShift?.let { shift ->
-                val start = shift.startMinute
-                val end = shift.endMinute
-                if (start != null && end != null) {
-                    Text(
-                        text = "%02d:%02d – %02d:%02d".format(
-                            start / 60, start % 60, end / 60, end % 60,
-                        ),
-                        style = TextStyle(color = white, fontSize = 13.sp),
-                    )
-                }
+            todayShift?.blocks?.takeIf { it.isNotEmpty() }?.let { blocks ->
+                Text(
+                    // Joined rather than only the first: on a split day the second stretch is
+                    // exactly the one you would otherwise forget.
+                    text = blocks.joinToString(" · ") { block ->
+                        "%02d:%02d – %02d:%02d".format(
+                            block.startMinute / 60,
+                            block.startMinute % 60,
+                            block.endMinute / 60,
+                            block.endMinute % 60,
+                        )
+                    },
+                    style = TextStyle(color = white, fontSize = 13.sp),
+                )
             }
         } else {
             val next = schedule.nextWorkingDay(today.plusDays(1))
             Text(
                 text = next?.let {
                     val days = it.date.toEpochDay() - today.toEpochDay()
-                    when (days) {
-                        1L -> "Back in tomorrow"
-                        else -> "Back in ${it.date.format(NEXT_SHIFT_DATE)} · ${days}d"
+                    if (days == 1L) {
+                        context.getString(R.string.widget_back_tomorrow)
+                    } else {
+                        context.getString(
+                            R.string.widget_back_on,
+                            it.date.format(NEXT_SHIFT_DATE),
+                            days.toInt(),
+                        )
                     }
-                } ?: "Nothing scheduled",
+                } ?: context.getString(R.string.widget_nothing_scheduled),
                 style = TextStyle(color = white, fontSize = 13.sp),
             )
         }

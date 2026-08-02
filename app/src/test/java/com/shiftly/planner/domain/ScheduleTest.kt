@@ -198,6 +198,20 @@ class ScheduleTest {
     }
 
     @Test
+    fun `summarising resolved days matches summarising the month`() {
+        // The calendar resolves the month once and totals that list rather than resolving twice.
+        // The two routes must not be able to disagree.
+        val schedule = scheduleWith(Presets.byKey("dupont")!!.cycle)
+            .withOverride(anchor.plusDays(3), ID_OFF)
+        val january = YearMonth.of(2026, 1)
+
+        assertEquals(
+            schedule.monthSummary(january),
+            schedule.summaryOf(schedule.shiftsInMonth(january)),
+        )
+    }
+
+    @Test
     fun `overrides are reflected in the month summary`() {
         val schedule = scheduleWith(Presets.byKey("4on4off_days")!!.cycle)
         val january = YearMonth.of(2026, 1)
@@ -263,6 +277,217 @@ class ScheduleTest {
     fun `adding built-ins is a no-op when they are all present`() {
         val schedule = Schedule()
         assertEquals(schedule, schedule.withBuiltinTypes())
+    }
+}
+
+class EditableShiftTypeTest {
+
+    private val anchor = LocalDate.of(2026, 1, 1)
+
+    private fun scheduleWith(cycle: List<String>) = Schedule(
+        pattern = ShiftPattern("test", "Test", cycle, anchor.toEpochDay()),
+    )
+
+    @Test
+    fun `editing a shift type changes the hours every day of that type reports`() {
+        // The whole point: nobody said a day shift runs 07:00-19:00.
+        val schedule = scheduleWith(listOf(ID_DAY, ID_OFF))
+        val earlies = ShiftType.DAY.copy(startMinute = 6 * 60, endMinute = 14 * 60)
+
+        val edited = schedule.withShiftType(earlies)
+
+        assertEquals(8 * 60, edited.shiftOn(anchor)?.durationMinutes)
+        // And the month total follows, because it is summed from the same types.
+        assertEquals(
+            edited.monthSummary(YearMonth.of(2026, 1)).workingDays * 8 * 60,
+            edited.monthSummary(YearMonth.of(2026, 1)).totalMinutes,
+        )
+    }
+
+    @Test
+    fun `editing replaces rather than appends`() {
+        val schedule = Schedule()
+        val before = schedule.shiftTypes.size
+
+        val edited = schedule.withShiftType(ShiftType.NIGHT.copy(name = "Nights"))
+
+        assertEquals(before, edited.shiftTypes.size)
+        assertEquals("Nights", edited.typeOrNull(ShiftType.ID_NIGHT)?.name)
+    }
+
+    @Test
+    fun `a new type is added and resolvable`() {
+        val onCall = ShiftType(
+            id = "custom_on_call",
+            name = "On call",
+            abbreviation = "OC",
+            colorArgb = 0xFF00796B,
+            startMinute = 8 * 60,
+            endMinute = 20 * 60,
+        )
+
+        val edited = Schedule().withShiftType(onCall)
+
+        assertEquals(onCall, edited.typeOrNull("custom_on_call"))
+    }
+
+    @Test
+    fun `a type used by the rotation cannot be deleted`() {
+        val schedule = scheduleWith(listOf(ID_DAY, ID_OFF))
+            .withShiftType(ShiftType.DAY.copy(id = "custom", name = "Mine"))
+
+        assertTrue(schedule.isShiftTypeInUse(ID_DAY))
+        // Removing it would blank every day the rotation puts it on.
+        assertEquals(schedule, schedule.withoutShiftType(ID_DAY))
+    }
+
+    @Test
+    fun `a type used only by a hand-edited day cannot be deleted either`() {
+        val custom = ShiftType("custom", "Mine", "M", 0xFF112233)
+        val schedule = scheduleWith(listOf(ID_OFF))
+            .withShiftType(custom)
+            .withOverride(anchor, "custom")
+
+        assertTrue(schedule.isShiftTypeInUse("custom"))
+        assertEquals(schedule, schedule.withoutShiftType("custom"))
+    }
+
+    @Test
+    fun `an unused custom type can be deleted`() {
+        val custom = ShiftType("custom", "Mine", "M", 0xFF112233)
+        val schedule = scheduleWith(listOf(ID_OFF)).withShiftType(custom)
+
+        val edited = schedule.withoutShiftType("custom")
+
+        assertNull(edited.typeOrNull("custom"))
+    }
+
+    @Test
+    fun `a built-in cannot be deleted, because loading would put it back`() {
+        // withBuiltinTypes backfills the defaults, so a deleted built-in would reappear on the
+        // next load and read as the delete having silently failed.
+        val schedule = scheduleWith(listOf(ID_OFF))
+        assertFalse(schedule.isShiftTypeInUse(ID_NIGHT))
+
+        assertEquals(schedule, schedule.withoutShiftType(ID_NIGHT))
+    }
+
+    @Test
+    fun `an edited built-in survives the built-in backfill`() {
+        // withBuiltinTypes only adds ids that are missing entirely, so it must not overwrite hours
+        // the user has changed.
+        val edited = Schedule()
+            .withShiftType(ShiftType.DAY.copy(startMinute = 6 * 60, endMinute = 18 * 60))
+            .withBuiltinTypes()
+
+        assertEquals(6 * 60, edited.typeOrNull(ID_DAY)?.startMinute)
+        assertEquals(12 * 60, edited.typeOrNull(ID_DAY)?.durationMinutes)
+    }
+}
+
+class SplitShiftTest {
+
+    private val anchor = LocalDate.of(2026, 1, 1)
+
+    /** The maritime watch the split exists for: four hours on, eight off, twice a day. */
+    private val watch = ShiftType(
+        id = "custom_watch",
+        name = "Watch",
+        abbreviation = "W",
+        colorArgb = 0xFF00897B,
+        segments = listOf(
+            ShiftSegment(0, 4 * 60),
+            ShiftSegment(12 * 60, 16 * 60),
+        ),
+    )
+
+    @Test
+    fun `a split day totals every block`() {
+        assertEquals(8 * 60, watch.durationMinutes)
+        assertTrue(watch.isSplit)
+    }
+
+    @Test
+    fun `a block that crosses midnight is measured forwards`() {
+        assertEquals(4 * 60, ShiftSegment(22 * 60, 2 * 60).lengthMinutes)
+    }
+
+    @Test
+    fun `a block that ends when it starts is a whole day`() {
+        assertEquals(24 * 60, ShiftSegment(8 * 60, 8 * 60).lengthMinutes)
+    }
+
+    @Test
+    fun `a plain shift reads as one block`() {
+        assertEquals(1, ShiftType.DAY.blocks.size)
+        assertFalse(ShiftType.DAY.isSplit)
+        assertEquals(7 * 60, ShiftType.DAY.blocks.single().startMinute)
+    }
+
+    @Test
+    fun `a non-working type has no blocks and no duration`() {
+        assertTrue(ShiftType.OFF.blocks.isEmpty())
+        assertNull(ShiftType.OFF.durationMinutes)
+    }
+
+    @Test
+    fun `month totals count the hours of a split day, not the day`() {
+        // A one-day cycle of the watch: every day of January is eight hours across two blocks.
+        val schedule = Schedule(
+            shiftTypes = ShiftType.defaults + watch,
+            pattern = ShiftPattern("test", "Watch", listOf(watch.id), anchor.toEpochDay()),
+        )
+
+        val summary = schedule.monthSummary(YearMonth.of(2026, 1))
+
+        assertEquals(31, summary.workingDays)
+        assertEquals(31 * 8 * 60, summary.totalMinutes)
+    }
+}
+
+class BulkOverrideTest {
+
+    private val anchor = LocalDate.of(2026, 1, 1)
+
+    private fun schedule() = Schedule(
+        pattern = ShiftPattern(
+            "test",
+            "Test",
+            Presets.byKey("4on4off_days")!!.cycle,
+            anchor.toEpochDay(),
+        ),
+    )
+
+    @Test
+    fun `a run of days can be set in one go`() {
+        val week = (0L until 7L).map { anchor.plusDays(it) }
+
+        val edited = schedule().withOverrides(week, ID_NIGHT)
+
+        week.forEach { assertEquals(ID_NIGHT, edited.shiftOn(it)?.id) }
+        // And only those days: the eighth still follows the rotation.
+        assertFalse(edited.isOverridden(anchor.plusDays(7)))
+    }
+
+    @Test
+    fun `a run of days can be put back on the rotation in one go`() {
+        val week = (0L until 7L).map { anchor.plusDays(it) }
+        val edited = schedule().withOverrides(week, ID_NIGHT)
+
+        val reset = edited.withoutOverrides(week)
+
+        assertEquals(schedule().overrides, reset.overrides)
+        assertEquals(ID_DAY, reset.shiftOn(anchor)?.id)
+    }
+
+    @Test
+    fun `clearing a selection leaves days outside it alone`() {
+        val edited = schedule()
+            .withOverrides(listOf(anchor, anchor.plusDays(1)), ID_NIGHT)
+            .withoutOverrides(listOf(anchor))
+
+        assertFalse(edited.isOverridden(anchor))
+        assertTrue(edited.isOverridden(anchor.plusDays(1)))
     }
 }
 

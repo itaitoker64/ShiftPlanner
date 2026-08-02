@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -85,12 +87,27 @@ android {
     }
 }
 
+// A Compose test that never reaches idle hangs rather than fails, and CI will happily sit on it
+// until the runner's own six-hour limit. Failing after ten minutes turns that into a build
+// failure, and logging each test as it starts means the last line names whichever one stuck.
+// Four minutes: the whole suite runs in well under one.
+//
+// Deliberately outside the android block: in there `java` resolves to Gradle's java extension
+// rather than the package, so java.time.Duration will not compile.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(4))
+    testLogging {
+        events("started", "passed", "failed", "skipped")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

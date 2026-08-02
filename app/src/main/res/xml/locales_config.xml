@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The languages the app ships. Android reads this to offer Shiftly in its own per-app language
+  screen from API 33; the in-app picker exists because that screen does not exist below 33 and is
+  not somewhere people look above it.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="he" />
+</locale-config>

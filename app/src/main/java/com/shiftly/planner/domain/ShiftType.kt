@@ -3,6 +3,32 @@ package com.shiftly.planner.domain
 import kotlinx.serialization.Serializable
 
 /**
+ * One continuous block of work inside a day.
+ *
+ * Most shifts are a single block, but watch systems are not: four hours on and eight off means two
+ * separate four-hour blocks in the same twenty-four hours. Splitting the *type* rather than the
+ * pattern is what keeps the one idea intact — a rotation is still a cycle of shift-type ids
+ * anchored to a date, and a day still resolves to exactly one type.
+ */
+@Serializable
+data class ShiftSegment(
+    /** Minutes from midnight. */
+    val startMinute: Int,
+    val endMinute: Int,
+) {
+    /**
+     * Wrap-aware, so a block running 22:00 to 02:00 is four hours rather than minus twenty, and a
+     * block that ends when it starts has run right round the clock.
+     */
+    val lengthMinutes: Int
+        get() = if (endMinute > startMinute) {
+            endMinute - startMinute
+        } else {
+            endMinute + ShiftType.MINUTES_PER_DAY - startMinute
+        }
+}
+
+/**
  * A kind of shift a user can be assigned to on a given day.
  *
  * [id] is stable and referenced by [ShiftPattern.cycle] and by overrides, so it must never change
@@ -17,21 +43,39 @@ data class ShiftType(
     val abbreviation: String,
     /** ARGB packed into a Long so it survives serialization without a Compose dependency. */
     val colorArgb: Long,
-    /** Minutes from midnight, or null for non-working types. */
+    /**
+     * Minutes from midnight, or null for non-working types.
+     *
+     * Kept alongside [segments] rather than replaced by it so that a schedule stored before splits
+     * existed still decodes, and so the common case — one block — stays a pair of fields rather
+     * than a list of one.
+     */
     val startMinute: Int? = null,
     val endMinute: Int? = null,
+    /** Set instead of [startMinute]/[endMinute] when the day is split into several blocks. */
+    val segments: List<ShiftSegment> = emptyList(),
     val isWorking: Boolean = true,
 ) {
     /**
-     * Shift length in minutes, handling shifts that cross midnight (a night shift ending at 07:00
-     * is 12 hours after a 19:00 start, not negative twelve).
+     * Every block worked, however the type was written.
+     *
+     * The rest of the app goes through this rather than the raw fields, so a split day and a plain
+     * one are the same shape to the calendar, the widget, the totals and the calendar export.
      */
-    val durationMinutes: Int?
-        get() {
-            val s = startMinute ?: return null
-            val e = endMinute ?: return null
-            return if (e > s) e - s else e + MINUTES_PER_DAY - s
+    val blocks: List<ShiftSegment>
+        get() = when {
+            segments.isNotEmpty() -> segments
+            startMinute != null && endMinute != null ->
+                listOf(ShiftSegment(startMinute, endMinute))
+            else -> emptyList()
         }
+
+    /** Total time worked in a day, summed across every block. Null when nothing is worked. */
+    val durationMinutes: Int?
+        get() = blocks.takeIf { it.isNotEmpty() }?.sumOf { it.lengthMinutes }
+
+    /** True when the day is broken into more than one block. */
+    val isSplit: Boolean get() = blocks.size > 1
 
     companion object {
         const val MINUTES_PER_DAY = 24 * 60

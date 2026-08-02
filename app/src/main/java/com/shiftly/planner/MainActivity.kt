@@ -1,9 +1,11 @@
 package com.shiftly.planner
 
 import android.Manifest
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,8 +21,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shiftly.planner.ads.BannerAd
 import com.shiftly.planner.ads.ConsentManager
 import com.shiftly.planner.ui.CalendarScreen
+import com.shiftly.planner.ui.CalendarSyncScreen
+import com.shiftly.planner.ui.GuideScreen
+import com.shiftly.planner.ui.OnboardingScreen
 import com.shiftly.planner.ui.ScheduleViewModel
+import com.shiftly.planner.ui.SettingsScreen
 import com.shiftly.planner.ui.SetupScreen
+import com.shiftly.planner.ui.ShiftTypesScreen
+import com.shiftly.planner.text.AppLanguage
 import com.shiftly.planner.ui.theme.ShiftlyTheme
 
 class MainActivity : ComponentActivity() {
@@ -30,41 +38,128 @@ class MainActivity : ComponentActivity() {
     /** Flipped once consent is resolved and the Mobile Ads SDK is initialised. */
     private var adsReady by mutableStateOf(false)
 
+    /**
+     * Applies the in-app language before anything is inflated.
+     *
+     * This is a ComponentActivity rather than an AppCompatActivity, so appcompat's pre-33 backport
+     * has nothing of ours to recreate on its own; wrapping the base context here is what makes the
+     * choice take effect on every version.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.applyTo(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        ConsentManager.gatherConsentThenInitialise(this) { adsReady = true }
-
         setContent {
             ShiftlyTheme {
+                // Consent lookup reads from disk and can show a dialog. Kicking it off from a
+                // LaunchedEffect rather than onCreate keeps it off the path to the first frame;
+                // nothing on screen depends on ads having resolved.
+                LaunchedEffect(Unit) {
+                    ConsentManager.gatherConsentThenInitialise(this@MainActivity) {
+                        adsReady = true
+                    }
+                }
+
                 ShiftlyApp(viewModel = viewModel, adsReady = adsReady)
             }
         }
     }
 }
 
+/** Which screen is in front. Still no navigation library, but the list is growing. */
+private enum class Destination {
+    Calendar, Setup, Guide, Onboarding, ShiftTimes, CalendarSync, Settings
+}
+
 /**
- * Two screens, no navigation library: the calendar, and the rotation setup.
+ * The calendar, the rotation setup, the guide, the shift-times editor, calendar sync, and the
+ * first-run walkthrough that comes before all of them.
  *
- * Setup is forced open on a fresh install because a calendar with no rotation has nothing to show.
+ * The walkthrough wins over everything on a fresh install. Past that, setup is forced open while
+ * there is no rotation, because a calendar with no rotation has nothing to show.
  */
 @Composable
 private fun ShiftlyApp(viewModel: ScheduleViewModel, adsReady: Boolean) {
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
+    val onboardingComplete by viewModel.onboardingComplete
+        .collectAsStateWithLifecycle(initialValue = true)
     var editingPattern by remember { mutableStateOf(false) }
+    var showingGuide by remember { mutableStateOf(false) }
+    var showingShiftTimes by remember { mutableStateOf(false) }
+    var showingCalendarSync by remember { mutableStateOf(false) }
+    var showingSettings by remember { mutableStateOf(false) }
 
     val needsSetup = schedule.pattern == null
+    val destination = when {
+        !onboardingComplete -> Destination.Onboarding
+        showingGuide -> Destination.Guide
+        showingShiftTimes -> Destination.ShiftTimes
+        showingCalendarSync -> Destination.CalendarSync
+        // Ahead of setup on purpose: without a rotation the calendar never shows, and someone who
+        // cannot read the language they are stuck in would have no way to reach the picker.
+        showingSettings -> Destination.Settings
+        needsSetup || editingPattern -> Destination.Setup
+        else -> Destination.Calendar
+    }
 
-    if (needsSetup || editingPattern) {
-        SetupScreen(viewModel = viewModel, onDone = { editingPattern = false })
-    } else {
-        NotificationPermissionRequest()
-        CalendarScreen(
+    // Back leaves the screen you are on rather than the app, matching the arrow in each top bar.
+    BackHandler(enabled = showingGuide) { showingGuide = false }
+    BackHandler(enabled = showingShiftTimes) { showingShiftTimes = false }
+    BackHandler(enabled = showingCalendarSync) { showingCalendarSync = false }
+    BackHandler(enabled = showingSettings) { showingSettings = false }
+
+    when (destination) {
+        Destination.Onboarding -> OnboardingScreen(
             viewModel = viewModel,
-            onEditPattern = { editingPattern = true },
-            bannerAd = { BannerAd(adsReady = adsReady) },
+            onFinished = { /* onboardingComplete flips and re-routes on its own. */ },
         )
+
+        Destination.Guide -> GuideScreen(onDone = { showingGuide = false })
+
+        Destination.ShiftTimes -> ShiftTypesScreen(
+            viewModel = viewModel,
+            onDone = { showingShiftTimes = false },
+        )
+
+        Destination.CalendarSync -> CalendarSyncScreen(
+            viewModel = viewModel,
+            onDone = { showingCalendarSync = false },
+        )
+
+        Destination.Settings -> SettingsScreen(
+            onDone = { showingSettings = false },
+            onShowRotation = {
+                showingSettings = false
+                editingPattern = true
+            },
+            onShowShiftTimes = { showingShiftTimes = true },
+            onShowCalendarSync = { showingCalendarSync = true },
+            onShowGuide = { showingGuide = true },
+        )
+
+        Destination.Setup -> SetupScreen(
+            viewModel = viewModel,
+            onDone = { editingPattern = false },
+            onShowGuide = { showingGuide = true },
+            onShowShiftTimes = { showingShiftTimes = true },
+            onShowCalendarSync = { showingCalendarSync = true },
+            onShowSettings = { showingSettings = true },
+        )
+
+        Destination.Calendar -> {
+            NotificationPermissionRequest()
+            CalendarScreen(
+                viewModel = viewModel,
+                onEditPattern = { editingPattern = true },
+                onShowGuide = { showingGuide = true },
+                onShowSettings = { showingSettings = true },
+                bannerAd = { BannerAd(adsReady = adsReady) },
+            )
+        }
     }
 }
 
