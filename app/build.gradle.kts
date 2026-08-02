@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -83,16 +85,18 @@ android {
         // Robolectric renders the real layouts, so it needs the merged resources and manifest.
         unitTests.isIncludeAndroidResources = true
     }
+}
 
-    // A Compose test that never reaches idle hangs rather than fails, and CI will happily sit on
-    // it until the runner's own six-hour limit. Failing after ten minutes turns that into a build
-    // failure, and logging each test as it starts means the last line names whichever one stuck.
-    tasks.withType<Test>().configureEach {
-        timeout.set(java.time.Duration.ofMinutes(10))
-        testLogging {
-            events("started", "passed", "failed", "skipped")
-            showStandardStreams = false
-        }
+// A Compose test that never reaches idle hangs rather than fails, and CI will happily sit on it
+// until the runner's own six-hour limit. Failing after ten minutes turns that into a build
+// failure, and logging each test as it starts means the last line names whichever one stuck.
+//
+// Deliberately outside the android block: in there `java` resolves to Gradle's java extension
+// rather than the package, so java.time.Duration will not compile.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
+    testLogging {
+        events("started", "passed", "failed", "skipped")
     }
 }
 
