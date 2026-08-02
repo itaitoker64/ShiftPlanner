@@ -85,6 +85,45 @@ release build rather than clashing with it, and it serves Google's test ads rath
 
 **By building it yourself.** See below.
 
+### Updates on your phone
+
+Once the four signing secrets below are set, every push to `main` publishes a signed APK to
+[Releases](../../releases). Point an updater at the repo and the phone picks up changes on its own —
+[Obtainium](https://github.com/ImranR98/Obtainium) is the usual choice: add the repository URL as a
+GitHub source and it checks for new releases and installs them.
+
+Updates only work if consecutive builds are signed by the **same** key and each `versionCode` is
+higher than the last. Android treats a differently-signed APK as a different app and refuses to
+install it over the old one — the "App not installed" dead end. Two things make that work here:
+
+- CI passes `SHIFTLY_VERSION_CODE=${{ github.run_number }}`, which only ever increases.
+- CI signs with a keystore held in repository secrets rather than the throwaway debug key that
+  every machine — and every CI runner — generates for itself.
+
+Create the key once, and keep the `.jks` somewhere safe:
+
+```bash
+keytool -genkeypair -v -keystore distribution.jks -alias shiftly \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 distribution.jks   # macOS: base64 -i distribution.jks
+```
+
+Then add four repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `SIGNING_KEYSTORE_BASE64` | the base64 output above |
+| `SIGNING_KEYSTORE_PASSWORD` | the store password you chose |
+| `SIGNING_KEY_ALIAS` | `shiftly` |
+| `SIGNING_KEY_PASSWORD` | the key password you chose |
+
+This is a distribution key for pre-release builds, **not** a Play upload key — generate a separate
+one for that when the time comes. Locally, none of this applies: without the secrets Gradle falls
+back to the usual per-machine debug key, which is all Android Studio needs.
+
+Switching to a stably-signed build means uninstalling any copy installed before the switch. That is
+a one-time cost; after it, updates land in place.
+
 ## Building
 
 Requires Android Studio (or a JDK) and the Android SDK. The Gradle wrapper handles the rest.
