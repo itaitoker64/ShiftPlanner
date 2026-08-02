@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -105,49 +106,57 @@ fun SetupScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            if (pattern == null) {
-                FirstRunIntro(onShowGuide)
-            } else {
-                NudgeCard(
-                    patternName = pattern.name,
-                    onNudge = viewModel::nudgeAnchor,
-                )
-                LinkRow(
-                    title = stringResource(R.string.setup_shift_times_row),
-                    subtitle = stringResource(R.string.setup_shift_times_row_help),
-                    onClick = onShowShiftTimes,
-                )
-                Spacer(Modifier.size(8.dp))
-                LinkRow(
-                    title = stringResource(R.string.setup_calendar_row),
-                    subtitle = stringResource(R.string.setup_calendar_row_help),
-                    onClick = onShowCalendarSync,
-                )
+        // The header is part of the list rather than a fixed Column stacked above it. Above it, the
+        // header took its height off the top and left the list whatever remained — on a short
+        // screen, close to nothing — and a lazy list with no viewport cannot be scrolled to
+        // anything, so reaching the confirm button became impossible rather than merely awkward.
+        val header: LazyListScope.() -> Unit = {
+            item {
+                if (pattern == null) {
+                    FirstRunIntro(onShowGuide)
+                } else {
+                    NudgeCard(
+                        patternName = pattern.name,
+                        onNudge = viewModel::nudgeAnchor,
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    LinkRow(
+                        title = stringResource(R.string.setup_shift_times_row),
+                        subtitle = stringResource(R.string.setup_shift_times_row_help),
+                        onClick = onShowShiftTimes,
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    LinkRow(
+                        title = stringResource(R.string.setup_calendar_row),
+                        subtitle = stringResource(R.string.setup_calendar_row_help),
+                        onClick = onShowCalendarSync,
+                    )
+                }
+
                 Spacer(Modifier.size(16.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !useCustom,
+                        onClick = { useCustom = false },
+                        label = { Text(stringResource(R.string.tab_presets)) },
+                    )
+                    FilterChip(
+                        selected = useCustom,
+                        onClick = { useCustom = true },
+                        label = { Text(stringResource(R.string.tab_custom)) },
+                    )
+                }
+
+                Spacer(Modifier.size(8.dp))
             }
+        }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    selected = !useCustom,
-                    onClick = { useCustom = false },
-                    label = { Text(stringResource(R.string.tab_presets)) },
-                )
-                FilterChip(
-                    selected = useCustom,
-                    onClick = { useCustom = true },
-                    label = { Text(stringResource(R.string.tab_custom)) },
-                )
-            }
-
-            Spacer(Modifier.size(8.dp))
-
+        Box(Modifier.fillMaxSize().padding(padding)) {
             if (useCustom) {
                 CustomCycleBuilder(
                     shiftTypes = schedule.shiftTypes,
+                    header = header,
                     onSave = { name, cycle, start ->
                         viewModel.applyCustomPattern(name, cycle, start)
                         onDone()
@@ -156,6 +165,7 @@ fun SetupScreen(
             } else {
                 PresetPicker(
                     shiftTypes = schedule.shiftTypes,
+                    header = header,
                     onSave = { preset, start, name ->
                         viewModel.applyPreset(preset, start, name)
                         onDone()
@@ -174,7 +184,7 @@ fun SetupScreen(
  */
 @Composable
 private fun FirstRunIntro(onShowGuide: () -> Unit) {
-    Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+    Column {
         Text(
             text = stringResource(R.string.intro_headline),
             style = MaterialTheme.typography.bodyLarge,
@@ -200,7 +210,6 @@ private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit) {
         shape = RoundedCornerShape(14.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
             .clickable(onClick = onClick),
     ) {
         Column(Modifier.padding(14.dp)) {
@@ -230,10 +239,7 @@ private fun NudgeCard(patternName: String, onNudge: (Long) -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 16.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(14.dp)) {
             Text(
@@ -263,6 +269,7 @@ private fun NudgeCard(patternName: String, onNudge: (Long) -> Unit) {
 @Composable
 private fun PresetPicker(
     shiftTypes: List<ShiftType>,
+    header: LazyListScope.() -> Unit,
     onSave: (ShiftPreset, LocalDate, String) -> Unit,
 ) {
     var selected by remember { mutableStateOf<ShiftPreset?>(null) }
@@ -273,6 +280,8 @@ private fun PresetPicker(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        header()
+
         items(Presets.all, key = { it.key }) { preset ->
             PresetCard(
                 preset = preset,
@@ -380,6 +389,7 @@ internal fun CyclePreview(cycle: List<String>, shiftTypes: List<ShiftType>) {
 @Composable
 private fun CustomCycleBuilder(
     shiftTypes: List<ShiftType>,
+    header: LazyListScope.() -> Unit,
     onSave: (String, List<String>, LocalDate) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
@@ -393,6 +403,8 @@ private fun CustomCycleBuilder(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        header()
+
         item {
             OutlinedTextField(
                 value = name,
