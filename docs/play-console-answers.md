@@ -82,11 +82,20 @@ sense — it never leaves the device. Everything disclosed below is the ads SDK.
 
 **Does your app collect or share any of the required user data types? → Yes**
 
-| Data type | Collected | Shared | Purpose | Required? |
-|---|---|---|---|---|
-| Device or other IDs | **Yes** | **Yes** | Advertising or marketing | Optional |
-| Location → Approximate location | **Yes** | **Yes** | Advertising or marketing | Optional |
-| App activity → App interactions | **Yes** | **Yes** | Advertising or marketing | Optional |
+| Data type | Collected | Shared | Processed ephemerally | Purpose | Required? |
+|---|---|---|---|---|---|
+| Device or other IDs | **Yes** | **Yes** | No | Advertising or marketing | **Required** |
+| Location → Approximate location | **Yes** | **Yes** | No | Advertising or marketing | **Required** |
+| App activity → App interactions | **Yes** | **Yes** | No | Advertising or marketing | **Required** |
+
+> **Required, not optional**, and the reasoning matters in case it ever has to be defended.
+> Google's test is whether the user can turn the collection off. The UMP consent form only
+> appears where the law demands it — the EEA, the UK and Switzerland — and it governs
+> *personalised* ads, not whether the SDK collects at all. A user in Israel has no in-app switch
+> that stops it. So the honest answer is required.
+>
+> This flips to optional the day the app grows a genuine in-app "no ads" or "no tracking"
+> setting. It does not have one today.
 
 Everything else — personal info, financial info, health, messages, photos and videos, audio,
 contacts, calendar *contents*, files — **not collected**.
