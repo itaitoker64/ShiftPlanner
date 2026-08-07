@@ -36,11 +36,17 @@ val liveBannerUnitId = providers.environmentVariable("SHIFTLY_ADMOB_BANNER_UNIT_
 val useTestAdsInRelease = providers.gradleProperty("shiftlyUseTestAds").orNull.toBoolean()
 
 android {
+    // The Kotlin package, and deliberately not the same as applicationId below. Play only ever
+    // sees the applicationId; this one is internal, and renaming it would move every source file
+    // to no user-visible end.
     namespace = "com.shiftly.planner"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.shiftly.planner"
+        // Identifies the app to Play, permanently: once the console entry exists this can never
+        // be changed, and the string can never be reused — not even by us, not even if the app
+        // is deleted. com.shiftly.planner was already taken, hence the difference from namespace.
+        applicationId = "com.shiftly.rota"
         minSdk = 26
         // Google Play requires new submissions to target API 36 from 31 August 2026.
         targetSdk = 36

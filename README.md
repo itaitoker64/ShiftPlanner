@@ -80,7 +80,7 @@ download the `shiftly-debug-apk-…` artifact at the bottom of the page. Unzip i
 your phone, and open it — Android will ask you to allow installs from that source. Requires Android
 8.0 or newer.
 
-The debug build has applicationId `com.shiftly.planner.debug`, so it installs alongside a future
+The debug build has applicationId `com.shiftly.rota.debug`, so it installs alongside a future
 release build rather than clashing with it, and it serves Google's test ads rather than live ones.
 
 **By building it yourself.** See below.

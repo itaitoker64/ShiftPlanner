@@ -117,6 +117,19 @@ Check the contact address in the policy is one you will actually read — Play s
 A one-off $25 registration fee, and identity verification that can take a few days. Start it
 before you need it.
 
+### Package name
+
+**`com.shiftly.rota`** — the `applicationId` in `app/build.gradle.kts`.
+
+It does not match the `namespace` above it (`com.shiftly.planner`), and that is deliberate rather
+than an oversight to tidy up. `com.shiftly.planner` was already taken on Play. Play only ever sees
+the applicationId; the namespace is the Kotlin package, and renaming it would move every source
+file for no user-visible gain.
+
+Once an app exists in the console under a package name, that name is fixed forever, and Play never
+releases it again — not to anyone else, and not back to you if you delete the app. Deleting a draft
+you never published burns it just the same. Be sure before you create the console entry.
+
 ### Data Safety form
 
 This is the part most likely to get a submission rejected, so here are the answers for this app
