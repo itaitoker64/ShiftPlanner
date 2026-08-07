@@ -94,9 +94,18 @@ SHIFTLY_ADMOB_BANNER_UNIT_ID=ca-app-pub-…/… \
 ./gradlew :app:bundleRelease
 ```
 
-Just checking that the release build still assembles and that R8 has not broken a keep rule?
-`./gradlew :app:bundleRelease -PshiftlyUseTestAds=true` needs no configuration at all. The
-result is unsigned and serves test ads — never upload it.
+### Before AdMob exists
+
+The `ad_ids` input takes `test`, which builds with Google's sample ad ids and needs no AdMob
+configuration — only the signing secrets. That is the build to put on the **internal testing**
+track to get the app onto a phone and take screenshots, well before there is anything to monetise.
+
+Its artifacts are named `…-TEST-ADS-DO-NOT-PROMOTE`, because the artifact name is the only thing
+anyone reads before dragging a file into Play. Internal testing is where it stops: promoted to
+closed testing or production it would serve sample ads forever and earn nothing.
+
+Locally the same build is `./gradlew :app:bundleRelease -PshiftlyUseTestAds=true`, which needs no
+configuration at all — unsigned, and enough to check that R8 has not broken a keep rule.
 
 ## 5. Publish the privacy policy
 

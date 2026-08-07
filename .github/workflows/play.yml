@@ -27,6 +27,15 @@ on:
           to Play, including ones that were rolled back. Play rejects a repeat.
         required: true
         type: string
+      ad_ids:
+        description: >-
+          live = the real AdMob ids, required for anything users can install.
+          test = Google's sample ids, for an internal-testing build made before AdMob is set up.
+          A test build must never be promoted past internal testing: it earns nothing.
+        required: true
+        default: live
+        type: choice
+        options: [live, test]
 
 concurrency:
   group: play
@@ -63,9 +72,11 @@ jobs:
             echo "::error::bundle, and every upload after the first must use the same key."
             fail=1
           fi
-          if [ -z "$ADMOB_APP_ID" ] || [ -z "$ADMOB_BANNER_UNIT_ID" ]; then
+          if [ "${{ inputs.ad_ids }}" = "live" ] \
+             && { [ -z "$ADMOB_APP_ID" ] || [ -z "$ADMOB_BANNER_UNIT_ID" ]; }; then
             echo "::error::ADMOB_APP_ID / ADMOB_BANNER_UNIT_ID repository variables are not set."
             echo "::error::Without them the build would carry Google's sample ids and earn nothing."
+            echo "::error::To build for internal testing before AdMob exists, re-run with ad_ids=test."
             fail=1
           fi
           exit $fail
@@ -87,7 +98,12 @@ jobs:
           SHIFTLY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
           SHIFTLY_ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
           SHIFTLY_ADMOB_BANNER_UNIT_ID: ${{ vars.ADMOB_BANNER_UNIT_ID }}
-        run: ./gradlew :app:bundleRelease
+        run: |
+          if [ "${{ inputs.ad_ids }}" = "test" ]; then
+            ./gradlew :app:bundleRelease -PshiftlyUseTestAds=true
+          else
+            ./gradlew :app:bundleRelease
+          fi
 
       # A bundle that was silently left unsigned looks identical until Play rejects it, by which
       # point the versionCode is spent. jarsigner is what Play itself checks.
@@ -103,13 +119,31 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/upload.jks"
 
+      # The artifact name is the only thing anyone reads before dragging a file into Play, so a
+      # test-ads build has to say so there rather than in a log nobody opens.
+      - name: Name the build
+        id: name
+        run: |
+          if [ "${{ inputs.ad_ids }}" = "test" ]; then
+            echo "suffix=-TEST-ADS-DO-NOT-PROMOTE" >> "$GITHUB_OUTPUT"
+            {
+              echo "### ⚠️ Built with Google's TEST ad ids"
+              echo ""
+              echo "Fine for internal testing. This build earns nothing and must never be"
+              echo "promoted to closed testing or production. Re-run with \`ad_ids=live\`"
+              echo "once the AdMob ids are set."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          fi
+
       # Held as an artifact rather than pushed to Play: the first upload of any app has to be
       # made by hand in the Play Console anyway, and it is the point where the release notes,
       # store listing and Data Safety form are filled in.
       - name: Upload the bundle
         uses: actions/upload-artifact@v4
         with:
-          name: shiftly-play-${{ inputs.version_code }}
+          name: shiftly-play-${{ inputs.version_code }}${{ steps.name.outputs.suffix }}
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
@@ -118,6 +152,6 @@ jobs:
       - name: Upload the R8 mapping file
         uses: actions/upload-artifact@v4
         with:
-          name: shiftly-play-${{ inputs.version_code }}-mapping
+          name: shiftly-play-${{ inputs.version_code }}${{ steps.name.outputs.suffix }}-mapping
           path: app/build/outputs/mapping/release/mapping.txt
           if-no-files-found: error

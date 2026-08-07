@@ -151,8 +151,9 @@ val verifyReleaseAdIds = tasks.register("verifyReleaseAdIds") {
     doLast {
         if (allowTestAds) {
             logger.lifecycle(
-                "Release build using Google's TEST ad ids (-PshiftlyUseTestAds). " +
-                    "Verification only — do not upload this build to Play."
+                "Release build using Google's TEST ad ids (-PshiftlyUseTestAds). Fine for " +
+                    "checking the build and for internal testing; it earns nothing, so never " +
+                    "promote it to closed testing or production."
             )
             return@doLast
         }
