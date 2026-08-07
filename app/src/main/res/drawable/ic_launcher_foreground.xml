@@ -4,21 +4,22 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <!-- Adaptive-icon foreground. Everything must sit inside the centre 72x72 safe zone, so the
-         mark is drawn between 18 and 90. A four-cell grid: three "on" days and one "off",
-         which is what the app is about. -->
-    <group android:translateX="18" android:translateY="18">
-        <path
-            android:fillColor="#FFFFFFFF"
-            android:pathData="M6,6h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4z" />
-        <path
-            android:fillColor="#FFFFFFFF"
-            android:pathData="M44,6h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4z" />
-        <path
-            android:fillColor="#FFFFFFFF"
-            android:pathData="M6,44h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4z" />
-        <!-- The "off" day: outline only. -->
-        <path
-            android:fillColor="#66FFFFFF"
-            android:pathData="M44,44h28a4,4 0 0,1 4,4v28a4,4 0 0,1 -4,4h-28a4,4 0 0,1 -4,-4v-28a4,4 0 0,1 4,-4zM48,52v20h20v-20z" />
-    </group>
+         mark spans exactly 18..90 on both axes and is centred on 54,54 — a launcher's circular
+         mask crops hard, and a mark a few units low reads as a mistake rather than a style.
+         A four-cell grid: three "on" days and one "off", which is what the app is about.
+         Cells are 34 wide with a 4 gap: 34 + 4 + 34 = 72. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M22,18h26a4,4 0 0,1 4,4v26a4,4 0 0,1 -4,4h-26a4,4 0 0,1 -4,-4v-26a4,4 0 0,1 4,-4z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M60,18h26a4,4 0 0,1 4,4v26a4,4 0 0,1 -4,4h-26a4,4 0 0,1 -4,-4v-26a4,4 0 0,1 4,-4z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M22,56h26a4,4 0 0,1 4,4v26a4,4 0 0,1 -4,4h-26a4,4 0 0,1 -4,-4v-26a4,4 0 0,1 4,-4z" />
+    <!-- The "off" day: outline only. The inner subpath winds the other way, so nonZero fill
+         leaves it hollow. -->
+    <path
+        android:fillColor="#66FFFFFF"
+        android:pathData="M60,56h26a4,4 0 0,1 4,4v26a4,4 0 0,1 -4,4h-26a4,4 0 0,1 -4,-4v-26a4,4 0 0,1 4,-4zM62,62v22h22v-22z" />
 </vector>
