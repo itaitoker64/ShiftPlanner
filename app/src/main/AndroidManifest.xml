@@ -38,11 +38,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Replaced with the real AdMob app id for the release build. This value is Google's
-             public sample app id and serves test ads only. -->
+        <!-- Google's public sample app id in debug builds; the real one from SHIFTLY_ADMOB_APP_ID
+             in release builds, which refuse to build without it. See app/build.gradle.kts. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="${admobAppId}" />
 
         <receiver
             android:name=".widget.ShiftWidgetReceiver"

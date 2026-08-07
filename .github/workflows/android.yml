@@ -39,6 +39,13 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug
 
+      # The Play bundle is the only build that runs R8, and a keep rule that goes missing breaks
+      # it at runtime rather than at compile time. Building it on every push means that surfaces
+      # here rather than in a release nobody can roll back. Unsigned and using test ad ids: this
+      # is a check that it builds and shrinks, not something anyone should install.
+      - name: Verify the release bundle builds
+        run: ./gradlew :app:bundleRelease -PshiftlyUseTestAds=true
+
       # Named per run so it is obvious which commit an installed build came from.
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

@@ -28,11 +28,15 @@ ads/        AdMob banner + UMP consent
   this. Anything needing a `Context` belongs in `data/` or above.
 - **Domain changes require tests.** `app/src/test/java/com/shiftly/planner/domain/ScheduleTest.kt`
   covers cycle wrapping, negative dates, override precedence and month totals. Extend it.
-- **Never hardcode a live ad unit id.** `AdIds` switches on `BuildConfig.DEBUG` and must keep
-  resolving to Google's test units in debug builds.
+- **Never hardcode a live ad unit id.** They come from `SHIFTLY_ADMOB_APP_ID` and
+  `SHIFTLY_ADMOB_BANNER_UNIT_ID` at build time. Debug builds ignore both and always serve Google's
+  test units — enforced twice, in `build.gradle.kts` and again by the `BuildConfig.DEBUG` branch in
+  `AdIds`. Keep both. A release build without the env vars fails; pass `-PshiftlyUseTestAds=true`
+  to assemble one for verification.
 - **Never commit keystores.** Losing or leaking the upload key means the app can never be updated
-  again. The distribution key CI signs published builds with lives in repository secrets, decoded
-  to a runner temp file and deleted afterwards — never in the tree.
+  again. Both keys CI signs with — the pre-release distribution key and the Play upload key, which
+  are deliberately different — live in repository secrets, decoded to a runner temp file and
+  deleted afterwards. Never in the tree.
 - **`versionCode` must increase on every published build.** It comes from `SHIFTLY_VERSION_CODE`
   (CI passes the run number). Android refuses to install an APK whose `versionCode` is not greater
   than the installed one, so a fixed value silently breaks updates on every phone that has it.
@@ -49,6 +53,13 @@ ads/        AdMob banner + UMP consent
 
 ```bash
 ./gradlew :app:assembleDebug
+```
+
+R8 only ever runs on the release build, so a missing keep rule breaks that build alone — and at
+runtime, not at compile time. CI checks it on every push; locally it is:
+
+```bash
+./gradlew :app:bundleRelease -PshiftlyUseTestAds=true
 ```
 
 Tests run on the JVM in four groups: `domain/` (pure logic), `ui/ScreenRenderTest` (Robolectric

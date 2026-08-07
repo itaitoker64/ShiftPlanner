@@ -17,6 +17,24 @@ val buildNumber = providers.environmentVariable("SHIFTLY_VERSION_CODE").orNull?.
 // use for updating an existing install, since a different key reads as a different app.
 val distributionKeystore = providers.environmentVariable("SHIFTLY_KEYSTORE_FILE").orNull
 
+// The Play upload key, and deliberately not the same key as above. Play re-signs what users
+// actually install with a key it holds; this one only proves an upload came from us. Absent
+// locally, in which case the release build is left unsigned — enough to verify that it assembles
+// and that R8 has not broken anything, not enough to upload.
+val uploadKeystore = providers.environmentVariable("SHIFTLY_UPLOAD_KEYSTORE_FILE").orNull
+
+// Google's public test ids. Every debug build serves these, whatever the environment says:
+// clicking a live ad on your own device is the fastest way to get an AdMob account banned.
+val testAdMobAppId = "ca-app-pub-3940256099942544~3347511713"
+val testBannerUnitId = "ca-app-pub-3940256099942544/9214589741"
+
+// The real ids, from the AdMob console. Release-only, and the release build refuses to run
+// without them unless -PshiftlyUseTestAds=true says the build is only being verified. Shipping
+// Google's sample ids to Play means an app that earns nothing and breaches AdMob's policy.
+val liveAdMobAppId = providers.environmentVariable("SHIFTLY_ADMOB_APP_ID").orNull
+val liveBannerUnitId = providers.environmentVariable("SHIFTLY_ADMOB_BANNER_UNIT_ID").orNull
+val useTestAdsInRelease = providers.gradleProperty("shiftlyUseTestAds").orNull.toBoolean()
+
 android {
     namespace = "com.shiftly.planner"
     compileSdk = 36
@@ -30,6 +48,11 @@ android {
         versionName = "1.0.$buildNumber"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Test ids by default, so any variant that does not override them below is harmless.
+        // The release build is the only one that overrides.
+        manifestPlaceholders["admobAppId"] = testAdMobAppId
+        buildConfigField("String", "ADMOB_BANNER_UNIT_ID", "\"$testBannerUnitId\"")
     }
 
     signingConfigs {
@@ -39,6 +62,15 @@ android {
                 storePassword = providers.environmentVariable("SHIFTLY_KEYSTORE_PASSWORD").orNull
                 keyAlias = providers.environmentVariable("SHIFTLY_KEY_ALIAS").orNull
                 keyPassword = providers.environmentVariable("SHIFTLY_KEY_PASSWORD").orNull
+            }
+        }
+        if (uploadKeystore != null) {
+            create("upload") {
+                storeFile = file(uploadKeystore)
+                storePassword =
+                    providers.environmentVariable("SHIFTLY_UPLOAD_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("SHIFTLY_UPLOAD_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("SHIFTLY_UPLOAD_KEY_PASSWORD").orNull
             }
         }
     }
@@ -57,6 +89,17 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
+            )
+            // Left unsigned when the key is absent. Play rejects an unsigned bundle, so this
+            // fails at upload rather than shipping something signed by the wrong key.
+            if (uploadKeystore != null) {
+                signingConfig = signingConfigs.getByName("upload")
+            }
+            manifestPlaceholders["admobAppId"] = liveAdMobAppId ?: testAdMobAppId
+            buildConfigField(
+                "String",
+                "ADMOB_BANNER_UNIT_ID",
+                "\"${liveBannerUnitId ?: testBannerUnitId}\"",
             )
         }
     }
@@ -85,6 +128,49 @@ android {
         // Robolectric renders the real layouts, so it needs the merged resources and manifest.
         unitTests.isIncludeAndroidResources = true
     }
+}
+
+// A release build carrying Google's sample ad ids looks perfectly healthy and earns nothing, and
+// the mistake is only visible once the app is live. Catch it here instead.
+//
+// Hung off preReleaseBuild rather than bundleRelease so it fails in seconds rather than after R8
+// has spent five minutes on a bundle nobody can use.
+val verifyReleaseAdIds = tasks.register("verifyReleaseAdIds") {
+    // Read at configuration time into locals. Referring to the script's own properties from
+    // inside doLast captures the script object, which the configuration cache cannot serialize.
+    val appId = liveAdMobAppId
+    val bannerUnitId = liveBannerUnitId
+    val allowTestAds = useTestAdsInRelease
+
+    doLast {
+        if (allowTestAds) {
+            logger.lifecycle(
+                "Release build using Google's TEST ad ids (-PshiftlyUseTestAds). " +
+                    "Verification only — do not upload this build to Play."
+            )
+            return@doLast
+        }
+        val missing = buildList {
+            if (appId == null) add("SHIFTLY_ADMOB_APP_ID")
+            if (bannerUnitId == null) add("SHIFTLY_ADMOB_BANNER_UNIT_ID")
+        }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                """
+                Release build is missing the real AdMob ids: ${missing.joinToString(", ")}.
+
+                Take them from the AdMob console (app id looks like ca-app-pub-…~…, the banner
+                unit id like ca-app-pub-…/…) and set them in the environment.
+
+                To assemble a release build for verification only, pass -PshiftlyUseTestAds=true.
+                """.trimIndent()
+            )
+        }
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(verifyReleaseAdIds)
 }
 
 // A Compose test that never reaches idle hangs rather than fails, and CI will happily sit on it

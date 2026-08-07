@@ -13,13 +13,14 @@ object AdIds {
 
     private const val TEST_BANNER = "ca-app-pub-3940256099942544/9214589741"
 
-    // TODO: replace with the real unit id from the AdMob console before the release build.
-    private const val LIVE_BANNER = "ca-app-pub-0000000000000000/0000000000"
-
+    /**
+     * The live unit comes from the build, not from a constant here: a real id in the source tree
+     * is one careless debug build away from a banned account, and one merged PR away from being
+     * public. `build.gradle.kts` fails the release build when it is missing.
+     *
+     * The DEBUG branch is belt and braces — Gradle already gives debug builds the test id — but it
+     * means no build configuration can ever put a live unit in front of a developer's thumb.
+     */
     val banner: String
-        get() = if (BuildConfig.DEBUG) TEST_BANNER else LIVE_BANNER
-
-    /** True while the live ids are still placeholders; guards the release build. */
-    val isLiveConfigured: Boolean
-        get() = !LIVE_BANNER.startsWith("ca-app-pub-0000")
+        get() = if (BuildConfig.DEBUG) TEST_BANNER else BuildConfig.ADMOB_BANNER_UNIT_ID
 }

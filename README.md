@@ -124,6 +124,16 @@ back to the usual per-machine debug key, which is all Android Studio needs.
 Switching to a stably-signed build means uninstalling any copy installed before the switch. That is
 a one-time cost; after it, updates land in place.
 
+## Releasing to Google Play
+
+The build side is done. `bundleRelease` produces a signed, R8-shrunk Android App Bundle that Play
+accepts, the **Play bundle** workflow builds it in CI, and [PRIVACY.md](PRIVACY.md) is written.
+
+What is missing is everything that cannot live in a repository: a Play Console account, an upload
+key, AdMob ids, a real app icon, and screenshots of an app that has still never been run on a
+screen. [docs/play-release.md](docs/play-release.md) is the runbook — the keys to generate, the
+secrets to set, the Data Safety answers for this app, and an honest list of what is left.
+
 ## Building
 
 Requires Android Studio (or a JDK) and the Android SDK. The Gradle wrapper handles the rest.
@@ -140,6 +150,16 @@ Android Studio bundles a suitable JDK.
 ```bash
 ./gradlew :app:assembleDebug
 ```
+
+To check that the release build still shrinks cleanly — the only build R8 runs on, and the one
+that goes to Play:
+
+```bash
+./gradlew :app:bundleRelease -PshiftlyUseTestAds=true
+```
+
+That produces an unsigned bundle serving test ads, which is for verification only. Building one
+that can actually be uploaded is [docs/play-release.md](docs/play-release.md).
 
 On Windows, use `gradlew.bat`. If Gradle can't find your SDK, create `local.properties` with
 `sdk.dir=C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk` — it's gitignored.
@@ -158,10 +178,12 @@ On Windows, use `gradlew.bat`. If Gradle can't find your SDK, create `local.prop
 | Homescreen widget (Glance) | Content tested; untested on a real homescreen |
 | Shift reminders (WorkManager) | Logic tested; delivery untested on device |
 | AdMob banner + UMP consent | Wired into the calendar, untested on device |
-| Debug + release builds, CI | Both assemble; every push builds an APK |
-| Test suite | 47 JVM tests: 29 domain, 7 screen, 6 widget, 5 reminder |
+| Debug + release builds, CI | Both assemble; every push builds an APK and checks the release bundle |
+| Test suite | 81 JVM tests across domain, screens, widget and reminders |
+| Signed Play bundle | Builds and verifies — needs an upload key and AdMob ids |
+| Privacy policy | Written ([PRIVACY.md](PRIVACY.md)); needs publishing at a URL |
 | App icon | Placeholder vector |
-| Play Store listing, privacy policy, signed AAB | Not started |
+| Play listing: store icon, feature graphic, screenshots, descriptions | Not started |
 
 ### Good first contributions
 
