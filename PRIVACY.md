@@ -57,6 +57,17 @@ personalised advertising, personalised ads are not requested. You can reset your
 time by clearing the app's data, and you can limit or reset your advertising ID in Android's
 system settings under **Settings → Privacy → Ads**.
 
+## Deleting your data
+
+Uninstall the app. Everything it stored goes with it.
+
+There is no deletion request to make and nobody to make it to, because there is no account and no
+server holding a copy. If you want to clear the app's data without uninstalling, Android's
+**Settings → Apps → Shiftly → Storage → Clear data** does it.
+
+Advertising data collected by Google is governed by Google's own controls: you can reset or delete
+your advertising ID in Android's **Settings → Privacy → Ads**.
+
 ## What the app never does
 
 - No account, sign-in or email address is required or requested.

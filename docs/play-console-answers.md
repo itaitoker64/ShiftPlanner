@@ -18,6 +18,24 @@ https://github.com/itaitoker64/ShiftPlanner/blob/main/PRIVACY.md
 
 There is no account, no login, no gated feature. Nothing for a reviewer to sign into.
 
+## Account creation and data deletion
+
+| Question | Answer |
+|---|---|
+| Which methods of account creation does your app support? | **My app does not allow users to create an account** — and nothing else |
+| Delete account URL | Not asked once the above is ticked |
+| Do you provide a way to request that some or all data be deleted, without deleting the account? *(optional)* | **No** |
+
+Ticking the no-account box is what removes the "Enter a valid URL" error under **Delete account
+URL**. Play only demands that link from apps that have accounts to delete.
+
+Answering **No** to the optional question is not a shortcoming to apologise for, it is the truth:
+there is no server, so there is no copy of anything to request the deletion of. Saying yes would
+commit you to hosting and maintaining a deletion-request page, publicly linked from the store
+listing, for data that never left the user's phone.
+
+Deleting the app removes everything it stored. That is the whole deletion story.
+
 ## Ads
 
 **Yes, my app contains ads.**
@@ -110,8 +128,14 @@ Security practices:
 | Question | Answer |
 |---|---|
 | Is all user data encrypted in transit? | **Yes** — the ad SDK uses HTTPS |
-| Do you provide a way for users to request data deletion? | **Yes** — uninstalling removes everything; there is no server copy |
+| Do you provide a way for users to request data deletion? | **No** — see below |
 | Has your data collection been independently validated? | **No** |
+
+> **No**, and this is a correction to an earlier version of this file that said yes. The question
+> asks whether the app offers a deletion *request mechanism* — an in-app control or a web form.
+> It does not. Uninstalling wipes the local data, but that is not a request process, and there is
+> nothing held anywhere to make a request about. Answering yes obliges you to publish a deletion
+> URL on the store listing and honour requests against it.
 
 ## Advertising ID
 
