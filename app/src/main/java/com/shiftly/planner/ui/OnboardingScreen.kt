@@ -44,12 +44,12 @@ import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftPattern
 import com.shiftly.planner.domain.ShiftPreset
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.DateSkeleton
+import com.shiftly.planner.text.autoIsolate
 import com.shiftly.planner.text.displayName
+import com.shiftly.planner.text.rememberDateFormatter
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-private val WEEKDAY: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE")
-private val FULL_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM yyyy")
 
 /** How many days of the rotation the confirmation step draws. */
 private const val PREVIEW_DAYS = 14
@@ -263,6 +263,8 @@ private fun StartDateStep(
     today: LocalDate,
     onNudge: (Long) -> Unit,
 ) {
+    val fullDate = rememberDateFormatter(DateSkeleton.SHORT_FULL_DATE, "EEE d MMM yyyy")
+
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -279,7 +281,10 @@ private fun StartDateStep(
         ) {
             Column(Modifier.padding(14.dp)) {
                 Text(
-                    text = stringResource(R.string.onboarding_day_one_is, startDate.format(FULL_DATE)),
+                    text = stringResource(
+                        R.string.onboarding_day_one_is,
+                        autoIsolate(startDate.format(fullDate)),
+                    ),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -377,6 +382,7 @@ private fun StepHeading(title: String, body: String) {
 private fun RotationPreview(preview: Schedule?, today: LocalDate) {
     if (preview == null) return
 
+    val weekday = rememberDateFormatter("EEE", "EEE")
     val days = remember(preview, today) {
         (0 until PREVIEW_DAYS).map { offset ->
             val date = today.plusDays(offset.toLong())
@@ -391,7 +397,7 @@ private fun RotationPreview(preview: Schedule?, today: LocalDate) {
         days.forEach { day ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = day.date.format(WEEKDAY),
+                    text = day.date.format(weekday),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

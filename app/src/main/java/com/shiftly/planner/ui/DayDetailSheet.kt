@@ -33,24 +33,31 @@ import androidx.compose.ui.unit.dp
 import com.shiftly.planner.R
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.DateSkeleton
+import com.shiftly.planner.text.autoIsolate
+import com.shiftly.planner.text.clockText
 import com.shiftly.planner.text.displayAbbreviation
 import com.shiftly.planner.text.displayName
+import com.shiftly.planner.text.ltrIsolate
+import com.shiftly.planner.text.rememberDateFormatter
 import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-
-private val DATE_TITLE: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM")
-private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 // Takes a Context rather than being @Composable: it returns early for non-working shifts, and an
 // early return out of a composable is more trouble than formatting a string is worth.
-private fun ShiftType.timeRangeText(context: Context): String? {
+internal fun ShiftType.timeRangeText(context: Context): String? {
     val spans = blocks.takeIf { it.isNotEmpty() } ?: return null
-    val ranges = spans.joinToString(" · ") { block ->
-        val from = LocalTime.of(block.startMinute / 60, block.startMinute % 60).format(TIME)
-        val to = LocalTime.of(block.endMinute / 60, block.endMinute % 60).format(TIME)
-        context.getString(R.string.time_range, from, to)
-    }
+    // One isolate around the whole list rather than one per range. Wrapping each range separately
+    // would keep every start next to its own end but let the blocks themselves reorder, which on a
+    // split day silently swaps which stretch comes first.
+    val ranges = ltrIsolate(
+        spans.joinToString(" · ") { block ->
+            context.getString(
+                R.string.time_range,
+                clockText(block.startMinute),
+                clockText(block.endMinute),
+            )
+        }
+    )
     val hours = durationMinutes?.div(60) ?: return ranges
     return context.getString(R.string.time_range_total, ranges, hours)
 }
@@ -74,6 +81,7 @@ fun DayDetailSheet(
     val context = LocalContext.current
     val current = schedule.shiftOn(date)
     val patternShift = schedule.pattern?.shiftTypeIdOn(date)?.let { schedule.typeOrNull(it) }
+    val dateTitle = rememberDateFormatter(DateSkeleton.WEEKDAY_DAY_MONTH, "EEEE d MMMM")
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -83,7 +91,7 @@ fun DayDetailSheet(
                 .padding(bottom = 28.dp),
         ) {
             Text(
-                text = date.format(DATE_TITLE),
+                text = date.format(dateTitle),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -93,7 +101,9 @@ fun DayDetailSheet(
             val name = current?.displayName(context) ?: stringResource(R.string.day_no_shift)
             val times = current?.timeRangeText(context)
             Text(
-                text = times?.let { stringResource(R.string.day_shift_with_time, name, it) } ?: name,
+                text = times?.let {
+                    stringResource(R.string.day_shift_with_time, autoIsolate(name), it)
+                } ?: name,
                 style = MaterialTheme.typography.bodyMedium,
             )
 
@@ -103,7 +113,7 @@ fun DayDetailSheet(
                         R.string.day_cycle_position,
                         pattern.cycleDayOn(date) + 1,
                         pattern.cycleLength,
-                        pattern.name,
+                        autoIsolate(pattern.name),
                     ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

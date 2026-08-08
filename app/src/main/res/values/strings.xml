@@ -12,7 +12,10 @@
     <string name="widget_no_rotation">No rotation</string>
     <string name="widget_back_tomorrow">Back in tomorrow</string>
     <!-- 1: date, e.g. "Mon 4 May". 2: how many days away. -->
-    <string name="widget_back_on">Back in %1$s · %2$dd</string>
+    <plurals name="widget_back_on">
+        <item quantity="one">Back in %1$s · %2$dd</item>
+        <item quantity="other">Back in %1$s · %2$dd</item>
+    </plurals>
     <string name="widget_nothing_scheduled">Nothing scheduled</string>
 
     <!-- Built-in shift types. The abbreviation is drawn inside a calendar square, so it has to
@@ -92,7 +95,6 @@
     <!-- 1: start time. 2: end time. -->
     <string name="time_range">%1$s – %2$s</string>
     <!-- 1: start time. 2: end time. 3: length in whole hours. -->
-    <string name="time_range_with_hours">%1$s – %2$s · %3$dh</string>
 
     <!-- Guide -->
     <string name="guide_title">How Shiftly works</string>
@@ -172,7 +174,6 @@
     <string name="shift_add">Add a shift</string>
     <string name="shift_not_worked">Not a working shift</string>
     <!-- 1: start time. 2: end time. 3: length in whole hours. -->
-    <string name="shift_hours_summary">%1$s – %2$s · %3$dh</string>
     <string name="shift_name_label">Name</string>
     <string name="shift_letter_label">Letter shown in the calendar</string>
     <string name="shift_is_working">This is a working shift</string>

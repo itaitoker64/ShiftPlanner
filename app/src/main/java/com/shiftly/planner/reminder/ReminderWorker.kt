@@ -16,7 +16,11 @@ import com.shiftly.planner.MainActivity
 import com.shiftly.planner.R
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.AppLanguage
+import com.shiftly.planner.text.autoIsolate
+import com.shiftly.planner.text.clockText
 import com.shiftly.planner.text.displayName
+import com.shiftly.planner.text.ltrIsolate
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
@@ -32,7 +36,10 @@ class ReminderWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val context = applicationContext
+        // A worker runs outside any activity, so nothing has applied the in-app language to this
+        // context. Without wrapping it the notification arrives in the phone's language while the
+        // app it came from is Hebrew.
+        val context = AppLanguage.applyTo(applicationContext)
 
         if (!hasNotificationPermission(context)) return Result.success()
 
@@ -72,16 +79,28 @@ class ReminderWorker(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-        val hours = shift.startMinute?.let { start ->
-            shift.endMinute?.let { end ->
-                " · %02d:%02d – %02d:%02d".format(start / 60, start % 60, end / 60, end % 60)
+        // Reads `blocks` rather than the single start/end pair: a shift split into stretches has no
+        // single start, so the pair is null and the notification used to arrive with no hours at
+        // all — on exactly the rotas where remembering them matters most.
+        val hours = shift.blocks
+            .takeIf { it.isNotEmpty() }
+            ?.let { blocks ->
+                " · " + ltrIsolate(
+                    blocks.joinToString(" · ") { block ->
+                        context.getString(
+                            R.string.time_range,
+                            clockText(block.startMinute),
+                            clockText(block.endMinute),
+                        )
+                    }
+                )
             }
-        }.orEmpty()
+            .orEmpty()
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.reminder_title))
-            .setContentText("${shift.displayName(context)}$hours")
+            .setContentText("${autoIsolate(shift.displayName(context))}$hours")
             .setContentIntent(openApp)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

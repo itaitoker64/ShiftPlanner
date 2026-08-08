@@ -225,7 +225,8 @@ class ScreenRenderTest {
 
         compose.onNodeWithText("Shift times").assertIsDisplayed()
         // The hours the app shipped with, which this screen exists to let people change.
-        compose.onNodeWithText("07:00 – 19:00 · 12h").assertExists()
+        // The range carries a left-to-right isolate so Hebrew cannot lay it out end-first.
+        compose.onNodeWithText("\u2066" + "07:00 – 19:00" + "\u2069" + " · 12h").assertExists()
     }
 
     @Test
@@ -322,7 +323,7 @@ class ScreenRenderTest {
         }
 
         // Jan 1 2026 is the anchor, so it is day one of the eight-day cycle and a Day shift.
-        compose.onNodeWithText("Day 1 of 8 · 4 on, 4 off").assertIsDisplayed()
+        compose.onNodeWithText("Day 1 of 8 · \u2068" + "4 on, 4 off" + "\u2069").assertIsDisplayed()
         compose.onNodeWithText("Change this day").assertIsDisplayed()
     }
 
@@ -345,5 +346,49 @@ class ScreenRenderTest {
         // The sheet opens partially expanded, so the reset row exists below the fold.
         compose.onNodeWithText("Rotation says: Day").assertExists()
         compose.onNodeWithText("Reset").assertExists()
+    }
+
+    // Hebrew.
+    //
+    // The app has been translated for a while, but nothing composed it in Hebrew, so a whole class
+    // of failure went unseen: strings that resolve, dates that do not, and clock ranges that the
+    // bidirectional algorithm quietly turns back to front.
+
+    @Test
+    @Config(qualifiers = "iw-rIL")
+    fun `the calendar composes in Hebrew`() {
+        compose.setContent {
+            ShiftlyTheme {
+                CalendarScreen(
+                    viewModel = viewModel(),
+                    onEditPattern = {},
+                    today = anchor,
+                )
+            }
+        }
+
+        // Proves values-iw is what resolved, rather than a silent fall back to English.
+        compose.onNodeWithText("היום").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "iw-rIL")
+    fun `a Hebrew day sheet keeps the shift times the right way round`() {
+        compose.setContent {
+            ShiftlyTheme {
+                DayDetailSheet(
+                    date = anchor,
+                    schedule = scheduleWith("4on4off_days"),
+                    onDismiss = {},
+                    onPick = {},
+                    onResetToPattern = {},
+                )
+            }
+        }
+
+        // A shift named in Hebrew, then the range pinned left to right inside it. Without the
+        // isolate the pair reads 19:00 – 07:00 on screen, which is a different shift entirely.
+        compose.onNodeWithText("\u2068" + "יום" + "\u2069 · \u2066" + "07:00 – 19:00" + "\u2069 · 12 ש׳")
+            .assertExists()
     }
 }

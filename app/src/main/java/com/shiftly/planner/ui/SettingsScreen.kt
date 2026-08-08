@@ -1,6 +1,8 @@
 package com.shiftly.planner.ui
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,6 +40,13 @@ import androidx.compose.ui.unit.dp
 import com.shiftly.planner.R
 import com.shiftly.planner.text.AppLanguage
 
+/** Unwraps whatever the composition is hosted in until the activity behind it turns up. */
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 /**
  * Everything that is a setting rather than a schedule.
  *
@@ -56,6 +65,17 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var language by remember { mutableStateOf(AppLanguage.stored(context)) }
+
+    // The choice only reaches the screen when the activity is rebuilt, because the language is
+    // applied in attachBaseContext. `LocalContext.current` is not always the activity itself —
+    // anything that wraps the composition hands back a ContextWrapper — and a failed cast here
+    // would silently leave the app in the old language until it was killed, which is exactly the
+    // complaint the picker was added to answer.
+    fun choose(tag: String) {
+        language = tag
+        AppLanguage.set(context, tag)
+        context.findActivity()?.recreate()
+    }
 
     Scaffold(
         topBar = {
@@ -87,11 +107,7 @@ fun SettingsScreen(
                 LanguageChoice(
                     label = stringResource(R.string.settings_language_system),
                     selected = language == AppLanguage.SYSTEM,
-                    onClick = {
-                        language = AppLanguage.SYSTEM
-                        AppLanguage.set(context, AppLanguage.SYSTEM)
-                        (context as? Activity)?.recreate()
-                    },
+                    onClick = { choose(AppLanguage.SYSTEM) },
                 )
             }
             item {
@@ -100,22 +116,14 @@ fun SettingsScreen(
                     // to be able to find their way out by recognising the name of their own.
                     label = "English",
                     selected = language == AppLanguage.ENGLISH,
-                    onClick = {
-                        language = AppLanguage.ENGLISH
-                        AppLanguage.set(context, AppLanguage.ENGLISH)
-                        (context as? Activity)?.recreate()
-                    },
+                    onClick = { choose(AppLanguage.ENGLISH) },
                 )
             }
             item {
                 LanguageChoice(
                     label = "עברית",
                     selected = language == AppLanguage.HEBREW,
-                    onClick = {
-                        language = AppLanguage.HEBREW
-                        AppLanguage.set(context, AppLanguage.HEBREW)
-                        (context as? Activity)?.recreate()
-                    },
+                    onClick = { choose(AppLanguage.HEBREW) },
                 )
             }
 
