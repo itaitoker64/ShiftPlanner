@@ -14,8 +14,3 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
-
-# Agent tooling installed per-machine, not part of the app.
-/.agents/
-/.claude/
-/skills-lock.json
