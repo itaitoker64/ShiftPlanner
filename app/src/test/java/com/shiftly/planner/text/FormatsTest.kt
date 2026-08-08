@@ -96,30 +96,22 @@ class FormatsTest {
     }
 
     @Test
-    fun `choosing Hebrew keeps the phone's country`() {
-        // Country decides conventions, language decides words, and picking a language is not a
-        // statement about where you live.
-        val onAnAmericanPhone = AppLanguage.localeFor(AppLanguage.HEBREW, Locale.US)
-
-        assertEquals("US", onAnAmericanPhone.country)
-        assertEquals(Locale.forLanguageTag("he").language, onAnAmericanPhone.language)
+    fun `a Hebrew calendar opens its week on Sunday`() {
+        // The property that matters to a reader, whoever derives it. The calendar takes its week
+        // start from the language the app is being shown in rather than from Locale.getDefault(),
+        // which below API 33 is still the phone's — so a Hebrew app on an English phone used to
+        // draw its first column on Monday.
+        assertEquals(DayOfWeek.SUNDAY, WeekFields.of(hebrew).firstDayOfWeek)
+        assertEquals(
+            DayOfWeek.SUNDAY,
+            WeekFields.of(Locale.forLanguageTag(AppLanguage.HEBREW)).firstDayOfWeek,
+        )
     }
 
     @Test
-    fun `a country-less Hebrew locale would open the week on the wrong day`() {
-        // The reason the rule above exists. A bare "he" carries no country, so WeekFields falls
-        // back to a Monday start and a Hebrew calendar draws its first column on the wrong day.
-        val bare = Locale.forLanguageTag("he")
-        val withCountry = AppLanguage.localeFor(AppLanguage.HEBREW, Locale.US)
-
-        assertEquals(DayOfWeek.MONDAY, WeekFields.of(bare).firstDayOfWeek)
-        assertEquals(DayOfWeek.SUNDAY, WeekFields.of(withCountry).firstDayOfWeek)
-    }
-
-    @Test
-    fun `a phone with no country is left alone rather than guessed at`() {
-        val locale = AppLanguage.localeFor(AppLanguage.HEBREW, Locale.forLanguageTag("en"))
-
-        assertEquals("", locale.country)
+    fun `a British phone still opens its week on Monday`() {
+        // The other half of the same rule: reading the week start from a locale rather than
+        // hardcoding one keeps the rest of the world right too.
+        assertEquals(DayOfWeek.MONDAY, WeekFields.of(Locale.UK).firstDayOfWeek)
     }
 }

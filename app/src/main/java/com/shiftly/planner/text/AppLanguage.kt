@@ -61,29 +61,10 @@ object AppLanguage {
         val tag = stored(base)
         if (tag == SYSTEM) return base
 
-        val locale = localeFor(tag, base.resources.configuration.locales[0])
+        val locale = Locale.forLanguageTag(tag)
         val configuration = Configuration(base.resources.configuration)
         configuration.setLocale(locale)
         configuration.setLayoutDirection(locale)
         return base.createConfigurationContext(configuration)
-    }
-
-    /**
-     * The chosen language, keeping the phone's country.
-     *
-     * Choosing Hebrew is a statement about words, not about where you live, and country is what
-     * decides the conventions around them — which day a week starts on, above all. A bare "he"
-     * carries no country, so `WeekFields` falls back to a Monday start and a Hebrew calendar opens
-     * on the wrong day. Carrying the phone's country over leaves those conventions where the owner
-     * of the phone already put them.
-     */
-    internal fun localeFor(tag: String, current: Locale): Locale {
-        val chosen = Locale.forLanguageTag(tag)
-        val country = current.country
-        if (country.isEmpty()) return chosen
-
-        return runCatching {
-            Locale.Builder().setLanguage(chosen.language).setRegion(country).build()
-        }.getOrDefault(chosen)
     }
 }
