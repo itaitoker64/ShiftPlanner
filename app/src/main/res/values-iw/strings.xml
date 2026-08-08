@@ -14,7 +14,12 @@
     <string name="widget_today">היום</string>
     <string name="widget_no_rotation">אין סבב</string>
     <string name="widget_back_tomorrow">חוזרים מחר</string>
-    <string name="widget_back_on">חוזרים ב־%1$s · בעוד %2$d ימים</string>
+    <plurals name="widget_back_on">
+        <item quantity="one">חוזרים ב־%1$s · בעוד יום</item>
+        <item quantity="two">חוזרים ב־%1$s · בעוד יומיים</item>
+        <item quantity="many">חוזרים ב־%1$s · בעוד %2$d יום</item>
+        <item quantity="other">חוזרים ב־%1$s · בעוד %2$d ימים</item>
+    </plurals>
     <string name="widget_nothing_scheduled">אין משמרות</string>
 
     <!-- Built-in shift types -->
@@ -48,15 +53,15 @@
     <string name="cd_back">חזרה</string>
     <string name="tab_presets">סבבים נפוצים</string>
     <string name="tab_custom">בנייה עצמית</string>
-    <string name="intro_headline">בחרו את הסבב שאתם עובדים, ו־Shiftly תמלא את היומן לכל חודש קדימה.</string>
+    <string name="intro_headline">בחרו את הסבב שאתם עובדים בו, ו־Shiftly תמלא את היומן לכל חודש קדימה.</string>
     <string name="intro_body">בחרו אחד מהרשימה, או בנו סבב משלכם אם הוא לא מופיע. אפשר לשנות בכל שלב.</string>
     <string name="guide_link">איך האפליקציה עובדת</string>
-    <string name="nudge_title">אתם על %1$s</string>
+    <string name="nudge_title">הסבב שלכם: %1$s</string>
     <string name="nudge_body">המשמרות נכונות אבל התאריכים לא? אפשר להזיז את כל הסבב בלי לבנות אותו מחדש. ימים ששיניתם ידנית יישארו במקומם.</string>
     <string name="nudge_earlier">יום אחורה</string>
     <string name="nudge_later">יום קדימה</string>
     <string name="preset_shifts_per_cycle">%1$d משמרות בכל %2$d ימים</string>
-    <string name="preset_start_helper">בחרו את היום הראשון של מחזור ה־\"%1$s\" הבא שלכם — היום הראשון שחוזרים לעבודה אחרי רצף חופש.</string>
+    <string name="preset_start_helper">בחרו את היום הראשון של המחזור הבא ב\"%1$s\" — היום הראשון שחוזרים לעבודה אחרי רצף חופש.</string>
     <string name="action_use_rotation">שימוש בסבב הזה</string>
     <string name="custom_name_label">שם (לא חובה)</string>
     <string name="custom_help">הקישו על משמרת לכל יום במחזור, לפי הסדר. הוסיפו ימים עד שהתבנית חוזרת על עצמה.</string>
@@ -80,7 +85,6 @@
     <string name="day_edited">שונה ידנית מהסבב</string>
     <string name="action_reset">איפוס</string>
     <string name="time_range">%1$s – %2$s</string>
-    <string name="time_range_with_hours">%1$s – %2$s · %3$d ש׳</string>
 
     <!-- Guide -->
     <string name="guide_title">איך Shiftly עובדת</string>
@@ -106,7 +110,7 @@
     <string name="guide_totals_2">הם מתעדכנים לפי החודש שמוצג, אז גללו קדימה כדי לראות מה מחכה בחודש הבא.</string>
 
     <string name="guide_one_day_title">שינוי של יום בודד</string>
-    <string name="guide_one_day_1">הקישו על יום כלשהו ובחרו משמרת אחרת. החלפתם משמרת עם מישהו, לקחתם יום חופש, קראו לכם פתאום — בשביל זה זה.</string>
+    <string name="guide_one_day_1">הקישו על יום כלשהו ובחרו משמרת אחרת. החלפתם משמרת עם מישהו, לקחתם יום חופש, קראו לכם פתאום — בדיוק בשביל זה.</string>
     <string name="guide_one_day_2">רק היום הזה משתנה. הסבב עצמו לא זז, אז כל שאר השנה נשארת במקום. היום מקבל נקודה אדומה שמסמנת שזה אתם ולא הסבב. הקישו עליו שוב ולחצו \"איפוס\" כדי להחזיר אותו.</string>
 
     <string name="guide_rotation_title">שינוי הסבב כולו</string>
@@ -114,7 +118,7 @@
     <string name="guide_rotation_2">שינוי הסבב מוחק את הימים הבודדים ששיניתם ידנית. הם היו תיקונים לסבב הישן, ומול הסבב החדש הם יהיו שגויים.</string>
 
     <string name="guide_offset_title">הכל מוזז ביום או יומיים</string>
-    <string name="guide_offset_1">זו התקלה הרגילה, ולא שווה לבנות בגללה את הסבב מחדש. זה אומר שתאריך ההתחלה שנתתם לא מדויק — צורת המחזור נכונה, הוא פשוט יושב על התאריכים הלא נכונים.</string>
+    <string name="guide_offset_1">זו הטעות הנפוצה, ולא שווה לבנות בגללה את הסבב מחדש. זה אומר שתאריך ההתחלה שנתתם לא מדויק — צורת המחזור נכונה, הוא פשוט יושב על התאריכים הלא נכונים.</string>
     <string name="guide_offset_2">פתחו את הסבב מהפס שבתחתית היומן. למעלה יש כפתורים שמזיזים את כל הסבב יום אחורה או יום קדימה. הזיזו עד שהיומן מתאים למשמרות שבאמת עבדתם השבוע. ימים ששיניתם ידנית יישארו במקומם.</string>
 
     <string name="guide_widget_title">על מסך הבית</string>
@@ -159,14 +163,13 @@
     <string name="shift_times_intro">אף אחד לא אמר שמשמרת יום היא 07:00 עד 19:00. הקישו על משמרת כדי לקבוע מתי שלכם באמת מתחילה ונגמרת.</string>
     <string name="shift_add">הוספת משמרת</string>
     <string name="shift_not_worked">לא משמרת עבודה</string>
-    <string name="shift_hours_summary">%1$s – %2$s · %3$d ש׳</string>
     <string name="shift_name_label">שם</string>
     <string name="shift_letter_label">האות שמוצגת ביומן</string>
     <string name="shift_is_working">זו משמרת עבודה</string>
     <string name="shift_is_working_help">כבו את זה לימי חופש, חופשה או כל דבר אחר שלא מקבלים עליו שכר.</string>
     <string name="shift_starts_at">מתחילה ב־%1$s</string>
     <string name="shift_ends_at">נגמרת ב־%1$s</string>
-    <string name="shift_lasts">זה אורך %1$d ש׳ %2$d ד׳</string>
+    <string name="shift_lasts">המשמרת נמשכת %1$d ש׳ %2$d ד׳</string>
     <string name="shift_colour">צבע</string>
     <string name="shift_save">שמירה</string>
     <string name="shift_delete">מחיקת המשמרת הזו</string>
@@ -247,6 +250,6 @@
     <string name="guide_swipe_1">גררו את היומן הצידה כדי לעבור חודש אחורה או קדימה. החיצים בסרגל העליון עושים את אותו הדבר, וכפתור \"היום\" מחזיר אתכם.</string>
 
     <string name="guide_split_title">משמרות מפוצלות בתוך היום</string>
-    <string name="guide_split_1">יש סבבים שהם לא רצף אחד ביום. ארבע שעות עבודה ושמונה מנוחה, כמו במשמרות ימאות, זה שני בלוקים נפרדים של ארבע שעות באותן עשרים וארבע שעות.</string>
+    <string name="guide_split_1">יש סבבים שהם לא רצף אחד ביום. ארבע שעות עבודה ושמונה מנוחה, כמו במשמרות של ימאים, זה שני בלוקים נפרדים של ארבע שעות באותן עשרים וארבע שעות.</string>
     <string name="guide_split_2">במסך \"שעות המשמרות\", פתחו משמרת ולחצו \"הוספת בלוק נוסף\". קבעו את השעות של כל אחד. הסיכומים החודשיים מחברים את כל הבלוקים, וכל בלוק הופך לאירוע נפרד ביומן שלכם.</string>
 </resources>

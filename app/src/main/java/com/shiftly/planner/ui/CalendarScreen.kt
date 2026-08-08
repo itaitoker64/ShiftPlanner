@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -60,18 +61,18 @@ import com.shiftly.planner.domain.DayShift
 import com.shiftly.planner.domain.MonthSummary
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.DateSkeleton
+import com.shiftly.planner.text.autoIsolate
 import com.shiftly.planner.text.displayAbbreviation
 import com.shiftly.planner.text.displayName
+import com.shiftly.planner.text.rememberDateFormatter
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
 import kotlin.math.abs
-
-private val MONTH_TITLE: DateTimeFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
 
 /**
  * Readable text for an arbitrary cell colour.
@@ -110,12 +111,14 @@ fun CalendarScreen(
         days.mapNotNull { it.shift }.distinctBy { it.id }
     }
 
+    val monthTitle = rememberDateFormatter(DateSkeleton.MONTH_AND_YEAR, "MMMM yyyy")
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = month.atDay(1).format(MONTH_TITLE),
+                        text = month.atDay(1).format(monthTitle),
                         fontWeight = FontWeight.SemiBold,
                     )
                 },
@@ -292,17 +295,29 @@ private fun SummaryStat(value: String, label: String, modifier: Modifier = Modif
     }
 }
 
-/** Respects the device locale's first day of week — Monday in most of the world, Sunday in the US. */
-private fun weekdayOrder(): List<DayOfWeek> {
-    val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+/**
+ * Respects the locale's first day of week — Monday in most of the world, Sunday in Israel and the
+ * US. Takes the locale rather than reading `Locale.getDefault()`, which below API 33 is still the
+ * phone's language even when the app has been switched to another one.
+ */
+private fun weekdayOrder(locale: Locale): List<DayOfWeek> {
+    val first = WeekFields.of(locale).firstDayOfWeek
     return (0..6).map { first.plus(it.toLong()) }
+}
+
+/** The order the grid runs in, rebuilt if the app's language changes under it. */
+@Composable
+private fun rememberWeekdayOrder(): List<DayOfWeek> {
+    val locale = LocalConfiguration.current.locales[0]
+    return remember(locale) { weekdayOrder(locale) }
 }
 
 @Composable
 private fun WeekdayHeader() {
-    val order = remember { weekdayOrder() }
-    val labels = remember(order) {
-        order.map { it.getDisplayName(TextStyle.NARROW, Locale.getDefault()) }
+    val locale = LocalConfiguration.current.locales[0]
+    val order = rememberWeekdayOrder()
+    val labels = remember(order, locale) {
+        order.map { it.getDisplayName(TextStyle.NARROW, locale) }
     }
     Row(Modifier.fillMaxWidth()) {
         labels.forEach { label ->
@@ -330,7 +345,7 @@ private fun MonthGrid(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
 ) {
-    val order = remember { weekdayOrder() }
+    val order = rememberWeekdayOrder()
     // How many blank cells before day 1, given the locale's week start.
     val leadingBlanks = remember(order, month) { order.indexOf(month.atDay(1).dayOfWeek) }
     val rows = remember(leadingBlanks, month) { (leadingBlanks + month.lengthOfMonth() + 6) / 7 }
@@ -587,8 +602,17 @@ private fun PatternFooter(schedule: Schedule, onEditPattern: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
+                // The name is whatever the user typed, so it carries its own direction into a
+                // sentence that has one already. Isolated, an English name inside Hebrew stops
+                // dragging the separator around it to the wrong end of the line.
                 text = pattern
-                    ?.let { stringResource(R.string.rotation_summary, it.name, it.cycleLength) }
+                    ?.let {
+                        stringResource(
+                            R.string.rotation_summary,
+                            autoIsolate(it.name),
+                            it.cycleLength,
+                        )
+                    }
                     ?: stringResource(R.string.rotation_none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

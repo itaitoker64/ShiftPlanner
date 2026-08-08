@@ -9,6 +9,11 @@ import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftPattern
 import com.shiftly.planner.domain.ShiftType.Companion.ID_NIGHT
 import com.shiftly.planner.domain.ShiftType.Companion.ID_OFF
+import com.shiftly.planner.text.DateSkeleton
+import com.shiftly.planner.text.appLocale
+import com.shiftly.planner.text.autoIsolate
+import com.shiftly.planner.text.dateFormatter
+import com.shiftly.planner.text.ltrIsolate
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,8 +56,9 @@ class ShiftWidgetTest {
 
         onNode(hasText("Today")).assertExists()
         onNode(hasText("Day")).assertExists()
-        // In today, the useful second line is the hours, not a countdown.
-        onNode(hasText("07:00 – 19:00")).assertExists()
+        // In today, the useful second line is the hours, not a countdown. Isolated so the
+        // pair cannot be laid out end-first on a Hebrew homescreen.
+        onNode(hasText(ltrIsolate("07:00 – 19:00"))).assertExists()
     }
 
     @Test
@@ -61,7 +67,12 @@ class ShiftWidgetTest {
         provideComposable { WidgetContent(context, rotationAt(cycleIndex = 5), today) }
 
         onNode(hasText("Off")).assertExists()
-        onNode(hasText("Back in Thu 18 Jun · 3d")).assertExists()
+        // The date is written in the locale's own field order rather than a pattern frozen into
+        // the app, so the expected text is built the same way instead of being spelled out here.
+        val date = LocalDate.of(2026, 6, 18).format(
+            dateFormatter(context.appLocale, DateSkeleton.SHORT_DATE, "EEE d MMM")
+        )
+        onNode(hasText("Back in ${autoIsolate(date)} · 3d")).assertExists()
     }
 
     @Test
@@ -79,7 +90,7 @@ class ShiftWidgetTest {
         provideComposable { WidgetContent(context, schedule, today) }
 
         onNode(hasText("Night")).assertExists()
-        onNode(hasText("19:00 – 07:00")).assertExists()
+        onNode(hasText(ltrIsolate("19:00 – 07:00"))).assertExists()
     }
 
     @Test

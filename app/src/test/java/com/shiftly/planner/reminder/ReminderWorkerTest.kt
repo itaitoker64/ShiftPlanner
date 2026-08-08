@@ -11,6 +11,8 @@ import com.shiftly.planner.domain.Presets
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftPattern
 import com.shiftly.planner.domain.ShiftType.Companion.ID_OFF
+import com.shiftly.planner.domain.ShiftSegment
+import com.shiftly.planner.domain.ShiftType
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -75,9 +77,40 @@ class ReminderWorkerTest {
         val posted = postedNotifications()
         assertEquals(1, posted.size)
         val text = shadowOf(posted.single()).contentText.toString()
-        assertTrue(text, text.startsWith("Day"))
+        // The name is isolated so that an English shift name inside a Hebrew notification does
+        // not drag the separator after it to the wrong end of the line.
+        assertTrue(text, text.contains("Day"))
         // The hours are the point of the notification, not decoration.
         assertTrue(text, text.contains("07:00 – 19:00"))
+    }
+
+    @Test
+    fun `a split shift reports both of its stretches`() {
+        // The notification used to read `startMinute`/`endMinute`, which a split shift leaves
+        // null, so it arrived with no hours at all on exactly the rotas that need them most.
+        val split = ShiftType(
+            id = "split",
+            name = "Watch",
+            abbreviation = "W",
+            colorArgb = 0xFF1E88E5,
+            isWorking = true,
+            segments = listOf(ShiftSegment(4 * 60, 8 * 60), ShiftSegment(16 * 60, 20 * 60)),
+        )
+        runBlocking {
+            val tomorrow = LocalDate.now().plusDays(1)
+            ScheduleRepository(context).save(
+                Schedule(
+                    shiftTypes = ShiftType.defaults + split,
+                    pattern = ShiftPattern("test", "Watches", listOf("split"), tomorrow.toEpochDay()),
+                )
+            )
+        }
+
+        assertEquals(ListenableWorker.Result.success(), runWorker())
+
+        val text = shadowOf(postedNotifications().single()).contentText.toString()
+        assertTrue(text, text.contains("04:00 – 08:00"))
+        assertTrue(text, text.contains("16:00 – 20:00"))
     }
 
     @Test

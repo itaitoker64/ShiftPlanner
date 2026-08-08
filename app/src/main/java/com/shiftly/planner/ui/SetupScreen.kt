@@ -62,15 +62,16 @@ import com.shiftly.planner.R
 import com.shiftly.planner.domain.Presets
 import com.shiftly.planner.domain.ShiftPreset
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.DateSkeleton
+import com.shiftly.planner.text.autoIsolate
 import com.shiftly.planner.text.displayAbbreviation
 import com.shiftly.planner.text.displayDescription
 import com.shiftly.planner.text.displayName
+import com.shiftly.planner.text.rememberDateFormatter
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
-private val START_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM yyyy")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,7 +256,7 @@ private fun NudgeCard(patternName: String, onNudge: (Long) -> Unit) {
     ) {
         Column(Modifier.padding(14.dp)) {
             Text(
-                text = stringResource(R.string.nudge_title, patternName),
+                text = stringResource(R.string.nudge_title, autoIsolate(patternName)),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -313,7 +314,7 @@ private fun PresetPicker(
                 StartDateSection(
                     startDate = startDate,
                     onDateChange = { startDate = it },
-                    helper = stringResource(R.string.preset_start_helper, presetName),
+                    helper = stringResource(R.string.preset_start_helper, autoIsolate(presetName)),
                 )
                 Spacer(Modifier.size(12.dp))
                 Button(
@@ -526,12 +527,13 @@ private fun StartDateSection(
     helper: String,
 ) {
     var showPicker by remember { mutableStateOf(false) }
+    val startDateFormat = rememberDateFormatter(DateSkeleton.SHORT_FULL_DATE, "EEE d MMM yyyy")
 
     Column {
         Text(helper, style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.size(8.dp))
         OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.cycle_starts, startDate.format(START_DATE)))
+            Text(stringResource(R.string.cycle_starts, autoIsolate(startDate.format(startDateFormat))))
         }
     }
 

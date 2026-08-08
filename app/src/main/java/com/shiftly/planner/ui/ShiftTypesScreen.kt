@@ -62,6 +62,7 @@ import com.shiftly.planner.R
 import com.shiftly.planner.domain.Schedule
 import com.shiftly.planner.domain.ShiftSegment
 import com.shiftly.planner.domain.ShiftType
+import com.shiftly.planner.text.clockText
 import com.shiftly.planner.text.displayAbbreviation
 import com.shiftly.planner.text.displayName
 import java.util.UUID
@@ -75,7 +76,7 @@ private val PALETTE = listOf(
 private const val DEFAULT_START_MINUTE = 9 * 60
 private const val DEFAULT_END_MINUTE = 17 * 60
 
-internal fun minuteOfDayText(minute: Int): String = "%02d:%02d".format(minute / 60, minute % 60)
+internal fun minuteOfDayText(minute: Int): String = clockText(minute)
 
 /**
  * Where the hours of a shift are set.
@@ -207,12 +208,9 @@ internal fun ShiftTypeRow(type: ShiftType, onClick: () -> Unit) {
                         !type.isWorking || blocks.isEmpty() ->
                             stringResource(R.string.shift_not_worked)
 
-                        blocks.size == 1 -> stringResource(
-                            R.string.shift_hours_summary,
-                            minuteOfDayText(blocks.single().startMinute),
-                            minuteOfDayText(blocks.single().endMinute),
-                            (type.durationMinutes ?: 0) / 60,
-                        )
+                        // Built through the same helper the day sheet uses, so the range is
+                        // isolated once and cannot drift out of step with it.
+                        blocks.size == 1 -> type.timeRangeText(context).orEmpty()
 
                         // A split day: say how many blocks rather than listing them all in a row
                         // that has no space for them.

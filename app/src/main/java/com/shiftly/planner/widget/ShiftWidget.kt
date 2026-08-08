@@ -27,12 +27,16 @@ import com.shiftly.planner.MainActivity
 import com.shiftly.planner.R
 import com.shiftly.planner.data.ScheduleRepository
 import com.shiftly.planner.domain.Schedule
+import com.shiftly.planner.text.AppLanguage
+import com.shiftly.planner.text.DateSkeleton
+import com.shiftly.planner.text.appLocale
+import com.shiftly.planner.text.autoIsolate
+import com.shiftly.planner.text.clockText
+import com.shiftly.planner.text.dateFormatter
 import com.shiftly.planner.text.displayName
+import com.shiftly.planner.text.ltrIsolate
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
-private val NEXT_SHIFT_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM")
 
 /**
  * Homescreen widget: what you're on today, and when you're next in.
@@ -44,9 +48,13 @@ class ShiftWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val schedule = ScheduleRepository(context).schedule.first()
+        // The widget is built outside any activity, so the in-app language never reaches it on its
+        // own below API 33 — it would sit on the homescreen in the phone's language while the app
+        // itself was Hebrew. Wrapping the context here is the same step the activity takes.
+        val localised = AppLanguage.applyTo(context)
         provideContent {
             GlanceTheme {
-                WidgetContent(context, schedule)
+                WidgetContent(localised, schedule)
             }
         }
     }
@@ -102,29 +110,39 @@ internal fun WidgetContent(
             todayShift?.blocks?.takeIf { it.isNotEmpty() }?.let { blocks ->
                 Text(
                     // Joined rather than only the first: on a split day the second stretch is
-                    // exactly the one you would otherwise forget.
-                    text = blocks.joinToString(" · ") { block ->
-                        "%02d:%02d – %02d:%02d".format(
-                            block.startMinute / 60,
-                            block.startMinute % 60,
-                            block.endMinute / 60,
-                            block.endMinute % 60,
-                        )
-                    },
+                    // exactly the one you would otherwise forget. Isolated so that a Hebrew
+                    // homescreen does not lay the range out end-first.
+                    text = ltrIsolate(
+                        blocks.joinToString(" · ") { block ->
+                            context.getString(
+                                R.string.time_range,
+                                clockText(block.startMinute),
+                                clockText(block.endMinute),
+                            )
+                        }
+                    ),
                     style = TextStyle(color = white, fontSize = 13.sp),
                 )
             }
         } else {
             val next = schedule.nextWorkingDay(today.plusDays(1))
+            val nextShiftDate = dateFormatter(
+                context.appLocale,
+                DateSkeleton.SHORT_DATE,
+                fallback = "EEE d MMM",
+            )
             Text(
                 text = next?.let {
                     val days = it.date.toEpochDay() - today.toEpochDay()
                     if (days == 1L) {
                         context.getString(R.string.widget_back_tomorrow)
                     } else {
-                        context.getString(
-                            R.string.widget_back_on,
-                            it.date.format(NEXT_SHIFT_DATE),
+                        // A quantity string rather than a plain one: Hebrew has a separate word
+                        // for two of something, and a two-day gap is the commonest gap there is.
+                        context.resources.getQuantityString(
+                            R.plurals.widget_back_on,
+                            days.toInt(),
+                            autoIsolate(it.date.format(nextShiftDate)),
                             days.toInt(),
                         )
                     }
